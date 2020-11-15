@@ -1596,6 +1596,9 @@ data Make
   | MakeNonMainFilesIntoJavaScript ModuleName.Raw [ModuleName.Raw]
   | MakeCannotBuild BuildProblem
   | MakeBadGenerate Generate
+  | MakeNoGeneratorModules
+  | MakeGeneratorModulesWithoutGenerators ModuleName.Raw [ModuleName.Raw]
+  | MakeNoGenerateScriptsFolder
 
 
 makeToReport :: Make -> Help.Report
@@ -1750,6 +1753,70 @@ makeToReport make =
     MakeBadGenerate generateProblem ->
       toGenerateReport generateProblem
 
+    MakeNoGeneratorModules ->
+      Help.report "NO GENERATORS" Nothing
+        ( "I looked inside `elm-generate-scripts` but i didn't find any generator modules.\
+          \ A generator module is any top-level module inside `elm-generate-scripts` that\
+          \isn't named Generate.elm"
+        )
+        [ D.reflow $
+            "Try creating a module inside `elm-generate-scripts`"
+        ]
+
+    MakeGeneratorModulesWithoutGenerators m ms ->
+      case ms of
+        [] ->
+          Help.report "NO GENERATORS" Nothing
+            (
+              "The module " ++ ModuleName.toChars m ++ " does not have any exposed generator values."
+            )
+            [ D.indent 4 $ D.red $ D.fromName m
+            , D.reflow $
+                "Try adding a generator value to you file, if you already have one then make sure\
+                \ it's exposed"
+            , D.toSimpleNote $
+                "A generator value is anything with the type `Generate.IO`"
+            , D.indent 4 $ D.vcat
+              [ D.fillSep [ "module", D.fromChars (ModuleName.toChars m), "exposing(" <> (D.green "myValue") <> ")" ]
+              , ""
+              , D.fillSep ["import", D.cyan "Generate"]
+              , ""
+              , D.fillSep [D.green "myValue", ":", D.cyan "Generate" <> D.dullyellow ".IO", "String"]
+              , D.fillSep [D.green "myValue","="]
+              , D.indent 2 $ D.fillSep [D.cyan "Generate" <> ".succeed \"Hello!\""]
+              ]
+            ]
+
+        _:_ ->
+          Help.report "NO GENERATORS" Nothing
+            (
+              "Some of the generator modules inside `elm-generate-scripts` don't have any exposed\
+                \ generator values."
+            )
+            [ D.indent 4 $ D.red $ D.vcat $ map D.fromName (m:ms)
+            , D.reflow $
+              "Try adding a generator value to you file, if you already have one then make sure\
+                \ it's exposed"
+            , D.toSimpleNote $
+                "A generator value is anything with the type `Generate.IO`"
+            , D.indent 4 $ D.vcat
+              [ D.fillSep [ "module", D.fromChars (ModuleName.toChars m), "exposing(" <> (D.green "myValue") <> ")" ]
+              , ""
+              , D.fillSep ["import", D.cyan "Generate"]
+              , ""
+              , D.fillSep [D.green "myValue", ":", D.cyan "Generate" <> D.dullyellow ".IO", "String"]
+              , D.fillSep [D.green "myValue","="]
+              , D.indent 2 $ D.fillSep [D.cyan "Generate" <> ".succeed \"Hello!\""]
+              ]
+            ]
+
+    MakeNoGenerateScriptsFolder ->
+      Help.report "NO elm-generate-scripts FOLDER" Nothing
+        "Try running:"
+        [ D.indent 4 $ D.green $ "elm-generate init"
+        , D.reflow $
+            "It will help you get set up. It is really simple!"
+        ]
 
 
 -- BUILD PROBLEM
