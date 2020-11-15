@@ -4,6 +4,7 @@ module Make
   , ReportType(..)
   , run
   , reportType
+  , interpreter
   )
   where
 
@@ -11,6 +12,11 @@ module Make
 import qualified Data.ByteString.Builder as B
 import qualified Data.Maybe as Maybe
 import qualified Data.NonEmptyList as NE
+import Control.Applicative ((<|>))
+import Control.Exception (try)
+import qualified System.IO as IO
+import qualified System.Process as Proc
+import qualified System.Exit as SExit
 import qualified System.Directory as Dir
 import qualified System.FilePath as FP
 
@@ -28,7 +34,6 @@ import qualified Reporting.Task as Task
 import qualified Stuff
 import Terminal (Parser(..))
 
-import Control.Exception (try)
 
 
 
@@ -37,7 +42,8 @@ import Control.Exception (try)
 
 data Flags =
   Flags
-    { _report :: Maybe ReportType
+    { _interpreter :: Maybe String
+    , _report :: Maybe ReportType
     }
 
 
@@ -53,17 +59,17 @@ type Task a = Task.Task Exit.Make a
 
 
 run :: () -> Flags -> IO ()
-run () (Flags report) =
+run () (Flags maybeInterpreter report) =
   do  style <- getStyle report
       maybeRoot <- Stuff.findRoot
       Reporting.attemptWithStyle style Exit.makeToReport $
         case maybeRoot of
-          Just root -> runHelp root style
+          Just root -> runHelp root style maybeInterpreter
           Nothing   -> return $ Left $ Exit.MakeNoOutline
 
 
-runHelp :: FilePath -> Reporting.Style -> IO (Either Exit.Make ())
-runHelp root style =
+runHelp :: FilePath -> Reporting.Style -> Maybe FilePath -> IO (Either Exit.Make ())
+runHelp root style maybeInterpreter =
   BW.withScope $ \scope ->
   Stuff.withRootLock root $ Task.run $
   do  details <- Task.eio Exit.MakeBadDetails (Details.load style scope root)
@@ -79,10 +85,11 @@ runHelp root style =
             inputModules = fmap FP.dropExtension (NE.List f fs)
           in
           do  artifacts <- buildPaths style root details inputPaths
+              interpreterPath <- getInterpreter maybeInterpreter
               case getNoGenerators artifacts of
                 [] ->
-                  do  builder <- toBuilder root details Dev artifacts
-                      generate style "elm.js" builder (Build.getRootNames artifacts)
+                  do  builder <- toBuilder root details artifacts
+                      generate style interpreterPath builder (Build.getRootNames artifacts)
 
                 name:names ->
                   Task.throw (Exit.MakeGeneratorModulesWithoutGenerators name names)
@@ -154,27 +161,62 @@ hasGenerator targetName modul =
 
 
 generate :: Reporting.Style -> FilePath -> B.Builder -> NE.List ModuleName.Raw -> Task ()
-generate style target builder names =
+generate style interpreter builder names =
   Task.io $
-    do  Dir.createDirectoryIfMissing True (FP.takeDirectory target)
-        File.writeBuilder target builder
-        Reporting.reportGenerate style names target
+    do  exitCode <- interpret interpreter builder
+        File.writeBuilder "elm.js" builder
+        -- Dir.createDirectoryIfMissing True (FP.takeDirectory target)
+        -- File.writeBuilder target builder
+        -- Reporting.reportGenerate style names target
+
+
+
+-- INTERPRET
+
+
+interpret :: FilePath -> B.Builder -> IO SExit.ExitCode
+interpret interpreter javascript =
+  let
+    createProcess = (Proc.proc interpreter []) { Proc.std_in = Proc.CreatePipe }
+  in
+  Proc.withCreateProcess createProcess $ \(Just stdin) _ _ handle ->
+    do  B.hPutBuilder stdin javascript
+        IO.hClose stdin
+        Proc.waitForProcess handle
+
+
+getInterpreter :: Maybe String -> Task.Task Exit.Make FilePath
+getInterpreter maybeName =
+  case maybeName of
+    Just name ->
+      getInterpreterHelp name (Dir.findExecutable name)
+
+    Nothing ->
+      getInterpreterHelp "node` or `nodejs" $
+        do  exe1 <- Dir.findExecutable "node"
+            exe2 <- Dir.findExecutable "nodejs"
+            return (exe1 <|> exe2)
+
+
+getInterpreterHelp :: String -> IO (Maybe FilePath) -> Task.Task Exit.Make FilePath
+getInterpreterHelp name findExe =
+  do  maybePath <- Task.io findExe
+      case maybePath of
+        Just path ->
+          return path
+
+        Nothing ->
+          Task.throw (Exit.MakeIntepreterNotFound name)
 
 
 
 -- TO BUILDER
 
 
-data DesiredMode = Debug | Dev | Prod
-
-
-toBuilder :: FilePath -> Details.Details -> DesiredMode -> Build.Artifacts -> Task B.Builder
-toBuilder root details desiredMode artifacts =
+toBuilder :: FilePath -> Details.Details -> Build.Artifacts -> Task B.Builder
+toBuilder root details artifacts =
   Task.mapError Exit.MakeBadGenerate $
-    case desiredMode of
-      Debug -> Generate.debug root details artifacts
-      Dev   -> Generate.dev   root details artifacts
-      Prod  -> Generate.prod  root details artifacts
+    Generate.dev root details artifacts
 
 
 
@@ -189,4 +231,15 @@ reportType =
     , _parser = \string -> if string == "json" then Just Json else Nothing
     , _suggest = \_ -> return ["json"]
     , _examples = \_ -> return ["json"]
+    }
+
+
+interpreter :: Parser String
+interpreter =
+  Parser
+    { _singular = "interpreter"
+    , _plural = "interpreters"
+    , _parser = Just
+    , _suggest = \_ -> return ["~/node"]
+    , _examples = \_ -> return ["~/node"]
     }

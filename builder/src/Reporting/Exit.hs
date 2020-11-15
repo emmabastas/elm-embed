@@ -1599,6 +1599,7 @@ data Make
   | MakeNoGeneratorModules
   | MakeGeneratorModulesWithoutGenerators ModuleName.Raw [ModuleName.Raw]
   | MakeNoGenerateScriptsFolder
+  | MakeIntepreterNotFound String
 
 
 makeToReport :: Make -> Help.Report
@@ -1817,6 +1818,15 @@ makeToReport make =
         , D.reflow $
             "It will help you get set up. It is really simple!"
         ]
+
+    MakeIntepreterNotFound name ->
+      Help.report "INTERPRETER NOT FOUND" Nothing
+        ( "`elm-generate` relies on node.js to execute the code in `elm-generate-scripts\n"
+          ++ "after they have been compiled. I could no find executable `" ++ name ++ "\n"
+          ++ "in your PATH though!\n\n"
+          ++ "You can use the --interpreter flag to specifying the location of the interpreter"
+        )
+        []
 
 
 -- BUILD PROBLEM
