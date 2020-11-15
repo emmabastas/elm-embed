@@ -25,6 +25,7 @@ import qualified Elm.ModuleName as ModuleName
 import qualified Generate.JavaScript.Builder as JS
 import qualified Generate.JavaScript.Expression as Expr
 import qualified Generate.JavaScript.Functions as Functions
+import qualified Generate.JavaScript.Runner as Runner
 import qualified Generate.JavaScript.Name as JsName
 import qualified Generate.Mode as Mode
 import qualified Reporting.Doc as D
@@ -49,6 +50,7 @@ generate mode (Opt.GlobalGraph graph _) generators =
   Functions.functions
   <> stateToBuilder state
   <> toGeneratorsList mode generators
+  <> Runner.runner
 
 
 addMain :: Mode.Mode -> Graph -> ModuleName.Canonical -> [Opt.Generator] -> State -> State
