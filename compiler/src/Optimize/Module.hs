@@ -4,6 +4,7 @@ module Optimize.Module
   ( optimize
   )
   where
+import Debug.Trace (trace)
 
 
 import Prelude hiding (cycle)
@@ -46,7 +47,7 @@ optimize annotations (Can.Module home _ _ decls unions aliases _ effects) =
     addEffects home effects $
       addUnions home unions $
         addAliases home aliases $
-          Opt.LocalGraph Nothing Map.empty Map.empty
+          Opt.LocalGraph [] Map.empty Map.empty
 
 
 
@@ -243,33 +244,25 @@ addDef home annotations def graph =
 
 
 addDefHelp :: A.Region -> Annotations -> ModuleName.Canonical -> Name.Name -> [Can.Pattern] -> Can.Expr -> Opt.LocalGraph -> Result i w Opt.LocalGraph
-addDefHelp region annotations home name args body graph@(Opt.LocalGraph _ nodes fieldCounts) =
-  if name /= Name._main then
-    Result.ok (addDefNode home name args body Set.empty graph)
-  else
-    let
-      (Can.Forall _ tipe) = annotations ! name
-
-      addMain (deps, fields, main) =
-        addDefNode home name args body deps $
-          Opt.LocalGraph (Just main) nodes (Map.unionWith (+) fields fieldCounts)
-    in
+addDefHelp region annotations home name args body graph@(Opt.LocalGraph generators nodes fieldCounts) =
+  let
+    (Can.Forall _ tipe) = annotations ! name
+  in
     case Type.deepDealias tipe of
-      Can.TType hm nm [_] | hm == ModuleName.virtualDom && nm == Name.node ->
-          Result.ok $ addMain $ Names.run $
-            Names.registerKernel Name.virtualDom Opt.Static
-
-      Can.TType hm nm [flags, _, message] | hm == ModuleName.platform && nm == Name.program ->
-          case Effects.checkPayload flags of
-            Right () ->
-              Result.ok $ addMain $ Names.run $
-                Opt.Dynamic message <$> Port.toFlagsDecoder flags
-
-            Left (subType, invalidPayload) ->
-              Result.throw (E.BadFlags region subType invalidPayload)
+      Can.TType hm nm [_] | hm == ModuleName.generate && nm == Name.io ->
+        let
+          generator =
+            Opt.Generator (Opt.Global home name)
+        in
+        Result.ok (addGenerator home name body generator graph)
 
       _ ->
-          Result.throw (E.BadType region tipe)
+        Result.ok (addDefNode home name args body Set.empty graph)
+
+
+addGenerator :: ModuleName.Canonical -> Name.Name -> Can.Expr -> Opt.Generator -> Opt.LocalGraph -> Opt.LocalGraph
+addGenerator home name body generator (Opt.LocalGraph generators nodes fields) =
+  addDefNode home name [] body (Set.fromList [Opt.Global home name]) (Opt.LocalGraph (generator:generators) nodes fields)
 
 
 addDefNode :: ModuleName.Canonical -> Name.Name -> [Can.Pattern] -> Can.Expr -> Set.Set Opt.Global -> Opt.LocalGraph -> Opt.LocalGraph

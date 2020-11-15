@@ -9,6 +9,7 @@ module AST.Optimized
   , Choice(..)
   , GlobalGraph(..)
   , LocalGraph(..)
+  , Generator(..)
   , Main(..)
   , Node(..)
   , EffectsType(..)
@@ -134,11 +135,16 @@ data GlobalGraph =
 
 data LocalGraph =
   LocalGraph
-    { _l_main :: Maybe Main
+    { _l_generators :: [Generator]
     , _l_nodes :: Map.Map Global Node  -- PERF profile switching Global to Name
     , _l_fields :: Map.Map Name Int
     }
 
+
+data Generator
+  = Generator
+    { name :: Global
+    }
 
 data Main
   = Static
@@ -387,6 +393,14 @@ instance Binary GlobalGraph where
 instance Binary LocalGraph where
   get = liftM3 LocalGraph get get get
   put (LocalGraph a b c) = put a >> put b >> put c
+
+
+instance Binary Generator where
+  put (Generator name) =
+    put name
+
+  get =
+    liftM Generator get
 
 
 instance Binary Main where

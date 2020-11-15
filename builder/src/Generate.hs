@@ -54,8 +54,8 @@ debug root details (Build.Artifacts pkg ifaces roots modules) =
       objects <- finalizeObjects loading
       let mode = Mode.Dev (Just types)
       let graph = objectsToGlobalGraph objects
-      let mains = gatherMains pkg objects roots
-      return $ JS.generate mode graph mains
+      let generators = gatherGenerators pkg objects roots
+      return $ JS.generate mode graph generators
 
 
 dev :: FilePath -> Details.Details -> Build.Artifacts -> Task B.Builder
@@ -63,8 +63,8 @@ dev root details (Build.Artifacts pkg _ roots modules) =
   do  objects <- finalizeObjects =<< loadObjects root details modules
       let mode = Mode.Dev Nothing
       let graph = objectsToGlobalGraph objects
-      let mains = gatherMains pkg objects roots
-      return $ JS.generate mode graph mains
+      let generators = gatherGenerators pkg objects roots
+      return $ JS.generate mode graph generators
 
 
 prod :: FilePath -> Details.Details -> Build.Artifacts -> Task B.Builder
@@ -73,8 +73,8 @@ prod root details (Build.Artifacts pkg _ roots modules) =
       checkForDebugUses objects
       let graph = objectsToGlobalGraph objects
       let mode = Mode.Prod (Mode.shortenFieldNames graph)
-      let mains = gatherMains pkg objects roots
-      return $ JS.generate mode graph mains
+      let generators = gatherGenerators pkg objects roots
+      return $ JS.generate mode graph generators
 
 
 repl :: FilePath -> Details.Details -> Bool -> Build.ReplArtifacts -> N.Name -> Task B.Builder
@@ -99,16 +99,16 @@ checkForDebugUses (Objects _ locals) =
 -- GATHER MAINS
 
 
-gatherMains :: Pkg.Name -> Objects -> NE.List Build.Root -> Map.Map ModuleName.Canonical Opt.Main
-gatherMains pkg (Objects _ locals) roots =
-  Map.fromList $ Maybe.mapMaybe (lookupMain pkg locals) (NE.toList roots)
+gatherGenerators :: Pkg.Name -> Objects -> NE.List Build.Root -> Map.Map ModuleName.Canonical [Opt.Generator]
+gatherGenerators pkg (Objects _ locals) roots =
+  Map.fromList $ Maybe.mapMaybe (lookupGenerators pkg locals) (NE.toList roots)
 
 
-lookupMain :: Pkg.Name -> Map.Map ModuleName.Raw Opt.LocalGraph -> Build.Root -> Maybe (ModuleName.Canonical, Opt.Main)
-lookupMain pkg locals root =
+lookupGenerators :: Pkg.Name -> Map.Map ModuleName.Raw Opt.LocalGraph -> Build.Root -> Maybe (ModuleName.Canonical, [Opt.Generator])
+lookupGenerators pkg locals root =
   let
-    toPair name (Opt.LocalGraph maybeMain _ _) =
-      (,) (ModuleName.Canonical pkg name) <$> maybeMain
+    toPair name (Opt.LocalGraph generators _ _) =
+      Just (ModuleName.Canonical pkg name, generators)
   in
   case root of
     Build.Inside  name     -> toPair name =<< Map.lookup name locals

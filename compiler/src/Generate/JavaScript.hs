@@ -37,25 +37,26 @@ import qualified Reporting.Render.Type.Localizer as L
 
 
 type Graph = Map.Map Opt.Global Opt.Node
+type Generators = Map.Map ModuleName.Canonical [Opt.Generator]
 type Mains = Map.Map ModuleName.Canonical Opt.Main
 
 
-generate :: Mode.Mode -> Opt.GlobalGraph -> Mains -> B.Builder
-generate mode (Opt.GlobalGraph graph _) mains =
+generate :: Mode.Mode -> Opt.GlobalGraph -> Generators -> B.Builder
+generate mode (Opt.GlobalGraph graph _) generators =
   let
-    state = Map.foldrWithKey (addMain mode graph) emptyState mains
+    state = Map.foldrWithKey (addMain mode graph) emptyState generators
   in
-  "(function(scope){\n'use strict';"
-  <> Functions.functions
-  <> perfNote mode
+  Functions.functions
   <> stateToBuilder state
-  <> toMainExports mode mains
-  <> "}(this));"
+  <> toGeneratorsList mode generators
 
 
-addMain :: Mode.Mode -> Graph -> ModuleName.Canonical -> Opt.Main -> State -> State
-addMain mode graph home _ state =
-  addGlobal mode graph state (Opt.Global home "main")
+addMain :: Mode.Mode -> Graph -> ModuleName.Canonical -> [Opt.Generator] -> State -> State
+addMain mode graph home generators state =
+  foldr
+    (\(Opt.Generator name) s -> addGlobal mode graph s name)
+    state
+    generators
 
 
 perfNote :: Mode.Mode -> B.Builder
@@ -501,90 +502,25 @@ generateManagerHelp home effectsType =
 -- MAIN EXPORTS
 
 
-toMainExports :: Mode.Mode -> Mains -> B.Builder
-toMainExports mode mains =
+toGeneratorsList :: Mode.Mode -> Generators -> B.Builder
+toGeneratorsList mode generators =
   let
-    export = JsName.fromKernel Name.platform "export"
-    exports = generateExports mode (Map.foldrWithKey addToTrie emptyTrie mains)
+    generatorsExpr =
+      JS.Object $
+        map
+          (\((ModuleName.Canonical _ mn), generators) ->
+            ( JsName.fromLocal mn
+            , JS.Object $
+              map
+                (\(Opt.Generator (Opt.Global mn name)) ->
+                  ( JsName.fromLocal name
+                  , JS.Ref $ JsName.fromGlobal mn name
+                  )
+                )
+                generators
+            )
+          )
+          (Map.toList generators)
   in
-  JsName.toBuilder export <> "(" <> exports <> ");"
+  "var generators = " <> JS.exprToBuilder generatorsExpr <> ";"
 
-
-generateExports :: Mode.Mode -> Trie -> B.Builder
-generateExports mode (Trie maybeMain subs) =
-  let
-    starter end =
-      case maybeMain of
-        Nothing ->
-          "{"
-
-        Just (home, main) ->
-          "{'init':"
-          <> JS.exprToBuilder (Expr.generateMain mode home main)
-          <> end
-    in
-    case Map.toList subs of
-      [] ->
-        starter "" <> "}"
-
-      (name, subTrie) : otherSubTries ->
-        starter "," <>
-        "'" <> Utf8.toBuilder name <> "':"
-        <> generateExports mode subTrie
-        <> List.foldl' (addSubTrie mode) "}" otherSubTries
-
-
-addSubTrie :: Mode.Mode -> B.Builder -> (Name.Name, Trie) -> B.Builder
-addSubTrie mode end (name, trie) =
-  ",'" <> Utf8.toBuilder name <> "':" <> generateExports mode trie <> end
-
-
-
--- BUILD TRIES
-
-
-data Trie =
-  Trie
-    { _main :: Maybe (ModuleName.Canonical, Opt.Main)
-    , _subs :: Map.Map Name.Name Trie
-    }
-
-
-emptyTrie :: Trie
-emptyTrie =
-  Trie Nothing Map.empty
-
-
-addToTrie :: ModuleName.Canonical -> Opt.Main -> Trie -> Trie
-addToTrie home@(ModuleName.Canonical _ moduleName) main trie =
-  merge trie $ segmentsToTrie home (Name.splitDots moduleName) main
-
-
-segmentsToTrie :: ModuleName.Canonical -> [Name.Name] -> Opt.Main -> Trie
-segmentsToTrie home segments main =
-  case segments of
-    [] ->
-      Trie (Just (home, main)) Map.empty
-
-    segment : otherSegments ->
-      Trie Nothing (Map.singleton segment (segmentsToTrie home otherSegments main))
-
-
-merge :: Trie -> Trie -> Trie
-merge (Trie main1 subs1) (Trie main2 subs2) =
-  Trie
-    (checkedMerge main1 main2)
-    (Map.unionWith merge subs1 subs2)
-
-
-checkedMerge :: Maybe a -> Maybe a -> Maybe a
-checkedMerge a b =
-  case (a, b) of
-    (Nothing, main) ->
-      main
-
-    (main, Nothing) ->
-      main
-
-    (Just _, Just _) ->
-      error "cannot have two modules with the same name"
