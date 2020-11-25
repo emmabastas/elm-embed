@@ -183,7 +183,7 @@ make =
 
     makeFlags =
       flags Make.Flags
-        |-- flag "interpreter" interpreter "Path to a alternate JS interpreter, like node or nodejs."
+        |-- flag "interpreter" Make.interpreterPath "Path to a alternate JS interpreter, like node or nodejs."
         |-- flag "report" Make.reportType "You can say --report=json to get error messages as JSON. This is only really useful if you are an editor plugin. Humans should avoid it!"
   in
   Terminal.Command "make" Uncommon details example noArgs makeFlags Make.run

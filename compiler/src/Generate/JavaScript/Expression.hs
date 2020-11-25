@@ -4,7 +4,6 @@ module Generate.JavaScript.Expression
   , generateCtor
   , generateField
   , generateTailDef
-  , generateMain
   , Code
   , codeToExpr
   , codeToStmtList
@@ -1028,43 +1027,3 @@ pathToJsExpr mode root path =
 
     DT.Empty ->
       JS.Ref (JsName.fromLocal root)
-
-
-
--- GENERATE MAIN
-
-
-generateMain :: Mode.Mode -> ModuleName.Canonical -> Opt.Main -> JS.Expr
-generateMain mode home main =
-  case main of
-    Opt.Static ->
-      JS.Ref (JsName.fromKernel Name.virtualDom "init")
-        # JS.Ref (JsName.fromGlobal home "main")
-        # JS.Int 0
-        # JS.Int 0
-
-    Opt.Dynamic msgType decoder ->
-      JS.Ref (JsName.fromGlobal home "main")
-        # generateJsExpr mode decoder
-        # toDebugMetadata mode msgType
-
-
-(#) :: JS.Expr -> JS.Expr -> JS.Expr
-(#) func arg =
-  JS.Call func [arg]
-
-
-toDebugMetadata :: Mode.Mode -> Can.Type -> JS.Expr
-toDebugMetadata mode msgType =
-  case mode of
-    Mode.Prod _ ->
-      JS.Int 0
-
-    Mode.Dev Nothing ->
-      JS.Int 0
-
-    Mode.Dev (Just interfaces) ->
-      JS.Json $ Encode.object $
-        [ "versions" ==> Encode.object [ "elm" ==> V.encode V.compiler ]
-        , "types"    ==> Type.encodeMetadata (Extract.fromMsg interfaces msgType)
-        ]

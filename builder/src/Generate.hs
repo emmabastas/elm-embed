@@ -2,8 +2,10 @@
 module Generate
   ( debug
   , dev
+  , devGetObjects
   , prod
   , repl
+  , Objects(..)
   )
   where
 
@@ -67,6 +69,15 @@ dev root details (Build.Artifacts pkg _ roots modules) =
       return $ JS.generate mode graph generators
 
 
+devGetObjects :: FilePath -> Details.Details -> Build.Artifacts -> Task (Objects, B.Builder)
+devGetObjects root details (Build.Artifacts pkg _ roots modules) =
+  do  objects <- finalizeObjects =<< loadObjects root details modules
+      let mode = Mode.Dev Nothing
+      let graph = objectsToGlobalGraph objects
+      let generators = gatherGenerators pkg objects roots
+      return $ (objects, JS.generate mode graph generators)
+
+
 prod :: FilePath -> Details.Details -> Build.Artifacts -> Task B.Builder
 prod root details (Build.Artifacts pkg _ roots modules) =
   do  objects <- finalizeObjects =<< loadObjects root details modules
@@ -107,7 +118,7 @@ gatherGenerators pkg (Objects _ locals) roots =
 lookupGenerators :: Pkg.Name -> Map.Map ModuleName.Raw Opt.LocalGraph -> Build.Root -> Maybe (ModuleName.Canonical, [Opt.Generator])
 lookupGenerators pkg locals root =
   let
-    toPair name (Opt.LocalGraph generators _ _) =
+    toPair name (Opt.LocalGraph generators _ _ _) =
       Just (ModuleName.Canonical pkg name, generators)
   in
   case root of

@@ -1600,6 +1600,7 @@ data Make
   | MakeGeneratorModulesWithoutGenerators ModuleName.Raw [ModuleName.Raw]
   | MakeNoGenerateScriptsFolder
   | MakeIntepreterNotFound String
+  | MakeGeneratorFail [(String, String, String)]
 
 
 makeToReport :: Make -> Help.Report
@@ -1827,6 +1828,18 @@ makeToReport make =
           ++ "You can use the --interpreter flag to specifying the location of the interpreter"
         )
         []
+
+    MakeGeneratorFail failures ->
+      Help.report "GENERATORS FAILED" Nothing
+        "These generators failed"
+        (concatMap
+          (\(moduleName, declarationName, message) ->
+            [ D.indent 2 $ (D.cyan (D.fromChars moduleName <> "." <>  D.fromChars declarationName))
+            , D.indent 6 (D.fromChars message)
+            ]
+          )
+          failures
+        )
 
 
 -- BUILD PROBLEM

@@ -461,7 +461,7 @@ onlyInExports name (A.At region _) =
 
 
 checkDefs :: Map.Map Name.Name (A.Located Can.Export) -> Src.Comment -> Map.Map Name.Name Src.Comment -> Can.Module -> Either E.Error Module
-checkDefs exportDict overview comments (Can.Module name _ _ decls unions aliases infixes effects) =
+checkDefs exportDict overview comments (Can.Module (A.At _  name) _ _ decls unions aliases infixes effects) =
   let
     types = gatherTypes decls Map.empty
     info = Info comments types unions aliases infixes effects

@@ -10,7 +10,6 @@ module AST.Optimized
   , GlobalGraph(..)
   , LocalGraph(..)
   , Generator(..)
-  , Main(..)
   , Node(..)
   , EffectsType(..)
   , empty
@@ -28,6 +27,7 @@ import qualified Data.Map as Map
 import qualified Data.Name as Name
 import Data.Name (Name)
 import qualified Data.Set as Set
+import GHC.Word (Word16)
 
 import qualified AST.Canonical as Can
 import qualified AST.Utils.Shader as Shader
@@ -138,20 +138,15 @@ data LocalGraph =
     { _l_generators :: [Generator]
     , _l_nodes :: Map.Map Global Node  -- PERF profile switching Global to Name
     , _l_fields :: Map.Map Name Int
+    , _l_moduleNameInSrc :: A.Region
     }
 
 
 data Generator
   = Generator
     { name :: Global
+    , bodySrc :: (Word16, Word16)
     }
-
-data Main
-  = Static
-  | Dynamic
-      { _message :: Can.Type
-      , _decoder :: Expr
-      }
 
 
 data Node
@@ -190,7 +185,7 @@ addGlobalGraph (GlobalGraph nodes1 fields1) (GlobalGraph nodes2 fields2) =
 
 
 addLocalGraph :: LocalGraph -> GlobalGraph -> GlobalGraph
-addLocalGraph (LocalGraph _ nodes1 fields1) (GlobalGraph nodes2 fields2) =
+addLocalGraph (LocalGraph _ nodes1 fields1 _) (GlobalGraph nodes2 fields2) =
   GlobalGraph
     { _g_nodes = Map.union nodes1 nodes2
     , _g_fields = Map.union fields1 fields2
@@ -391,30 +386,15 @@ instance Binary GlobalGraph where
 
 
 instance Binary LocalGraph where
-  get = liftM3 LocalGraph get get get
-  put (LocalGraph a b c) = put a >> put b >> put c
+  get = liftM4 LocalGraph get get get get
+  put (LocalGraph a b c d) = put a >> put b >> put c >> put d
 
 
 instance Binary Generator where
-  put (Generator name) =
-    put name
-
+  put (Generator a b) =
+    put a >> put b
   get =
-    liftM Generator get
-
-
-instance Binary Main where
-  put main =
-    case main of
-      Static      -> putWord8 0
-      Dynamic a b -> putWord8 1 >> put a >> put b
-
-  get =
-    do  word <- getWord8
-        case word of
-          0 -> return Static
-          1 -> liftM2 Dynamic get get
-          _ -> fail "problem getting Opt.Main binary"
+    liftM2 Generator get get
 
 
 instance Binary Node where

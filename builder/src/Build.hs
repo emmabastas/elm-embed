@@ -674,7 +674,7 @@ rootStatusToNamePathPair :: RootStatus -> Maybe (ModuleName.Raw, OneOrMore.OneOr
 rootStatusToNamePathPair sroot =
   case sroot of
     SInside _                                         -> Nothing
-    SOutsideOk (Details.Local path _ _ _ _ _) _ modul -> Just (Src.getName modul, OneOrMore.one path)
+    SOutsideOk (Details.Local path _ _ _ _ _) _ modul -> Just (A.toValue $ Src.getName modul, OneOrMore.one path)
     SOutsideErr _                                     -> Nothing
 
 
@@ -710,10 +710,10 @@ compile (Env key root projectType _ buildID _ _) docsNeed (Details.Local path ti
       case makeDocs docsNeed canonical of
         Left err ->
           return $ RProblem $
-            Error.Module (Src.getName modul) path time source (Error.BadDocs err)
+            Error.Module (A.toValue $ Src.getName modul) path time source (Error.BadDocs err)
 
         Right docs ->
-          do  let name = Src.getName modul
+          do  let (A.At _ name) = Src.getName modul
               let iface = I.fromModule pkg canonical annotations
               let elmi = Stuff.elmi root name
               File.writeBinary (Stuff.elmo root name) objects
@@ -734,7 +734,7 @@ compile (Env key root projectType _ buildID _ _) docsNeed (Details.Local path ti
 
     Left err ->
       return $ RProblem $
-        Error.Module (Src.getName modul) path time source err
+        Error.Module (A.toValue $ Src.getName modul) path time source err
 
 
 projectTypeToPkg :: Parse.ProjectType -> Pkg.Name
@@ -926,8 +926,8 @@ finalizeReplArtifacts env@(Env _ root projectType _ _ _ _) source modul@(Src.Mod
       case Compile.compile pkg ifaces modul of
         Right (Compile.Artifacts canonical annotations objects) ->
           let
-            h = Can._name canonical
-            m = Fresh (Src.getName modul) (I.fromModule pkg canonical annotations) objects
+            (A.At _ h) = Can._name canonical
+            m = Fresh (A.toValue $ Src.getName modul) (I.fromModule pkg canonical annotations) objects
             ms = Map.foldrWithKey addInside [] results
           in
           return $ Right $ ReplArtifacts h (m:ms) (L.fromModule modul) annotations
@@ -1163,7 +1163,7 @@ checkRoot env@(Env _ root _ _ _ _ _) results rootStatus =
               return ROutsideBlocked
 
             DepsNotFound problems ->
-              return $ ROutsideErr $ Error.Module (Src.getName modul) path time source $
+              return $ ROutsideErr $ Error.Module (A.toValue $ Src.getName modul) path time source $
                   Error.BadImports (toImportErrors env results imports problems)
 
 
@@ -1171,7 +1171,7 @@ compileOutside :: Env -> Details.Local -> B.ByteString -> Map.Map ModuleName.Raw
 compileOutside (Env key _ projectType _ _ _ _) (Details.Local path time _ _ _ _) source ifaces modul =
   let
     pkg = projectTypeToPkg projectType
-    name = Src.getName modul
+    (A.At _ name) = Src.getName modul
   in
   case Compile.compile pkg ifaces modul of
     Right (Compile.Artifacts canonical annotations objects) ->

@@ -138,14 +138,14 @@ data Module =
     }
 
 
-getName :: Module -> Name
+getName :: Module -> A.Located Name
 getName (Module maybeName _ _ _ _ _ _ _ _) =
   case maybeName of
-    Just (A.At _ name) ->
+    Just name ->
       name
 
     Nothing ->
-      Name._Main
+      A.at (A.Position 1 1) (A.Position 1 5) Name._Main
 
 
 getImportName :: Import -> Name

@@ -14,6 +14,7 @@ import qualified Data.Map as Map
 import qualified Data.Name as Name
 import qualified Data.Set as Set
 import Data.Map ((!))
+import GHC.Word (Word16)
 
 import qualified AST.Canonical as Can
 import qualified AST.Optimized as Opt
@@ -42,12 +43,12 @@ type Annotations =
 
 
 optimize :: Annotations -> Can.Module -> Result i [W.Warning] Opt.LocalGraph
-optimize annotations (Can.Module home _ _ decls unions aliases _ effects) =
+optimize annotations (Can.Module (A.At region home) _ _ decls unions aliases _ effects) =
   addDecls home annotations decls $
     addEffects home effects $
       addUnions home unions $
         addAliases home aliases $
-          Opt.LocalGraph [] Map.empty Map.empty
+          Opt.LocalGraph [] Map.empty Map.empty region
 
 
 
@@ -59,8 +60,8 @@ type Nodes =
 
 
 addUnions :: ModuleName.Canonical -> Map.Map Name.Name Can.Union -> Opt.LocalGraph -> Opt.LocalGraph
-addUnions home unions (Opt.LocalGraph main nodes fields) =
-  Opt.LocalGraph main (Map.foldr (addUnion home) nodes unions) fields
+addUnions home unions (Opt.LocalGraph main nodes fields moduleName) =
+  Opt.LocalGraph main (Map.foldr (addUnion home) nodes unions) fields moduleName
 
 
 addUnion :: ModuleName.Canonical -> Can.Union -> Nodes -> Nodes
@@ -90,7 +91,7 @@ addAliases home aliases graph =
 
 
 addAlias :: ModuleName.Canonical -> Name.Name -> Can.Alias -> Opt.LocalGraph -> Opt.LocalGraph
-addAlias home name (Can.Alias _ tipe) graph@(Opt.LocalGraph main nodes fieldCounts) =
+addAlias home name (Can.Alias _ tipe) graph@(Opt.LocalGraph main nodes fieldCounts moduleName) =
   case tipe of
     Can.TRecord fields Nothing ->
       let
@@ -105,6 +106,7 @@ addAlias home name (Can.Alias _ tipe) graph@(Opt.LocalGraph main nodes fieldCoun
         main
         (Map.insert (Opt.Global home name) node nodes)
         (Map.foldrWithKey addRecordCtorField fieldCounts fields)
+        moduleName
 
     _ ->
       graph
@@ -120,7 +122,7 @@ addRecordCtorField name _ fields =
 
 
 addEffects :: ModuleName.Canonical -> Can.Effects -> Opt.LocalGraph -> Opt.LocalGraph
-addEffects home effects graph@(Opt.LocalGraph main nodes fields) =
+addEffects home effects graph@(Opt.LocalGraph main nodes fields moduleName) =
   case effects of
     Can.NoEffects ->
       graph
@@ -149,7 +151,7 @@ addEffects home effects graph@(Opt.LocalGraph main nodes fields) =
               Map.insert sub link $
               Map.insert fx (Opt.Manager Opt.Fx) nodes
       in
-      Opt.LocalGraph main newNodes fields
+      Opt.LocalGraph main newNodes fields moduleName
 
 
 addPort :: ModuleName.Canonical -> Name.Name -> Can.Port -> Opt.LocalGraph -> Opt.LocalGraph
@@ -175,11 +177,12 @@ addPort home name port_ graph =
 
 
 addToGraph :: Opt.Global -> Opt.Node -> Map.Map Name.Name Int -> Opt.LocalGraph -> Opt.LocalGraph
-addToGraph name node fields (Opt.LocalGraph main nodes fieldCounts) =
+addToGraph name node fields (Opt.LocalGraph main nodes fieldCounts moduleName) =
   Opt.LocalGraph
     main
     (Map.insert name node nodes)
     (Map.unionWith (+) fields fieldCounts)
+    moduleName
 
 
 
@@ -236,15 +239,20 @@ addDef home annotations def graph =
   case def of
     Can.Def (A.At region name) args body ->
       do  let (Can.Forall _ tipe) = annotations ! name
+          let (A.Region (A.Position startRow _) _) = region
+          let (A.Region _ (A.Position endRow _)) = A.toRegion body
           Result.warn $ W.MissingTypeAnnotation region name tipe
-          addDefHelp region annotations home name args body graph
+          addDefHelp annotations home name (startRow, endRow) args body graph
 
     Can.TypedDef (A.At region name) _ typedArgs body _ ->
-      addDefHelp region annotations home name (map fst typedArgs) body graph
+      let (A.Region (A.Position startRow _) _) = region
+          (A.Region _ (A.Position endRow _)) = A.toRegion body
+      in
+      addDefHelp annotations home name (startRow, endRow) (map fst typedArgs) body graph
 
 
-addDefHelp :: A.Region -> Annotations -> ModuleName.Canonical -> Name.Name -> [Can.Pattern] -> Can.Expr -> Opt.LocalGraph -> Result i w Opt.LocalGraph
-addDefHelp region annotations home name args body graph@(Opt.LocalGraph generators nodes fieldCounts) =
+addDefHelp :: Annotations -> ModuleName.Canonical -> Name.Name -> (Word16, Word16) -> [Can.Pattern] -> Can.Expr -> Opt.LocalGraph -> Result i w Opt.LocalGraph
+addDefHelp annotations home name defRegion args body graph =
   let
     (Can.Forall _ tipe) = annotations ! name
   in
@@ -252,7 +260,7 @@ addDefHelp region annotations home name args body graph@(Opt.LocalGraph generato
       Can.TType hm nm [_] | hm == ModuleName.generate && nm == Name.io ->
         let
           generator =
-            Opt.Generator (Opt.Global home name)
+            Opt.Generator (Opt.Global home name) defRegion
         in
         Result.ok (addGenerator home name body generator graph)
 
@@ -261,8 +269,8 @@ addDefHelp region annotations home name args body graph@(Opt.LocalGraph generato
 
 
 addGenerator :: ModuleName.Canonical -> Name.Name -> Can.Expr -> Opt.Generator -> Opt.LocalGraph -> Opt.LocalGraph
-addGenerator home name body generator (Opt.LocalGraph generators nodes fields) =
-  addDefNode home name [] body (Set.fromList [Opt.Global home name]) (Opt.LocalGraph (generator:generators) nodes fields)
+addGenerator home name body generator (Opt.LocalGraph generators nodes fields moduleName) =
+  addDefNode home name [] body (Set.fromList [Opt.Global home name]) (Opt.LocalGraph (generator:generators) nodes fields moduleName)
 
 
 addDefNode :: ModuleName.Canonical -> Name.Name -> [Can.Pattern] -> Can.Expr -> Set.Set Opt.Global -> Opt.LocalGraph -> Opt.LocalGraph
@@ -295,7 +303,7 @@ data State =
 
 
 addRecDefs :: ModuleName.Canonical -> [Can.Def] -> Opt.LocalGraph -> Opt.LocalGraph
-addRecDefs home defs (Opt.LocalGraph main nodes fieldCounts) =
+addRecDefs home defs (Opt.LocalGraph main nodes fieldCounts moduleName) =
   let
     names = reverse (map toName defs)
     cycleName = Opt.Global home (Name.fromManyNames names)
@@ -310,6 +318,7 @@ addRecDefs home defs (Opt.LocalGraph main nodes fieldCounts) =
     main
     (Map.insert cycleName (Opt.Cycle names values funcs deps) (Map.union links nodes))
     (Map.unionWith (+) fields fieldCounts)
+    moduleName
 
 
 toName :: Can.Def -> Name.Name

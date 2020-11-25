@@ -43,12 +43,12 @@ type Result i w a =
 
 canonicalize :: Pkg.Name -> Map.Map ModuleName.Raw I.Interface -> Src.Module -> Result i [W.Warning] Can.Module
 canonicalize pkg ifaces modul@(Src.Module _ exports docs imports values _ _ binops effects) =
-  do  let home = ModuleName.Canonical pkg (Src.getName modul)
+  do  let home = fmap (ModuleName.Canonical pkg) (Src.getName modul)
       let cbinops = Map.fromList (map canonicalizeBinop binops)
 
       (env, cunions, caliases) <-
         Local.add modul =<<
-          Foreign.createInitialEnv home ifaces imports
+          Foreign.createInitialEnv (A.toValue home) ifaces imports
 
       cvalues <- canonicalizeValues env values
       ceffects <- Effects.canonicalize env values cunions effects

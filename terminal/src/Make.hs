@@ -1,24 +1,38 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, BlockArguments #-}
 module Make
   ( Flags(..)
   , ReportType(..)
   , run
   , reportType
-  , interpreter
+  , interpreterPath
   )
   where
+import Debug.Trace (trace)
 
 
 import qualified Data.ByteString.Builder as B
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as TextEncoding
+import qualified Data.Text.IO as TextIO
+import Data.Aeson (FromJSON, (.:))
+import qualified Data.Aeson as JSON
 import qualified Data.Maybe as Maybe
+import Data.Map ((!))
+import qualified Data.Map as Map
+import qualified Data.List as List
 import qualified Data.NonEmptyList as NE
+import qualified Data.Name as Name
 import Control.Applicative ((<|>))
 import Control.Exception (try)
+import qualified Control.Monad
 import qualified System.IO as IO
 import qualified System.Process as Proc
 import qualified System.Exit as SExit
 import qualified System.Directory as Dir
+import System.FilePath ((</>), (<.>))
 import qualified System.FilePath as FP
+import GHC.Word (Word16)
 
 import qualified AST.Optimized as Opt
 import qualified BackgroundWriter as BW
@@ -31,6 +45,8 @@ import qualified Generate.Html as Html
 import qualified Reporting
 import qualified Reporting.Exit as Exit
 import qualified Reporting.Task as Task
+import qualified Reporting.Annotation as A
+--import qualified Reporting.Anotation as A
 import qualified Stuff
 import Terminal (Parser(..))
 
@@ -73,8 +89,7 @@ runHelp root style maybeInterpreter =
   BW.withScope $ \scope ->
   Stuff.withRootLock root $ Task.run $
   do  details <- Task.eio Exit.MakeBadDetails (Details.load style scope root)
-      elmGenerateScriptContents <- listElmGenerateScriptsFolder
-      let inputFiles = filter (\p -> p /= "Generate.elm" && p /= "Generate") elmGenerateScriptContents
+      inputFiles <- getGeneratorFiles "elm-generate-scripts"
       case inputFiles of
         [] ->
           Task.throw Exit.MakeNoGeneratorModules
@@ -82,24 +97,23 @@ runHelp root style maybeInterpreter =
         f:fs ->
           let
             inputPaths = fmap (FP.combine "elm-generate-scripts") (NE.List f fs)
-            inputModules = fmap FP.dropExtension (NE.List f fs)
           in
           do  artifacts <- buildPaths style root details inputPaths
-              interpreterPath <- getInterpreter maybeInterpreter
               case getNoGenerators artifacts of
                 [] ->
-                  do  builder <- toBuilder root details artifacts
-                      generate style interpreterPath builder (Build.getRootNames artifacts)
+                  do  (objects, builder) <- toBuilder root details artifacts
+                      interpreterPath <- getInterpreter maybeInterpreter
+                      generated <- runGenerators interpreterPath builder
+                      case generated of
+                        Failure e ->
+                          Task.throw $ Exit.MakeGeneratorFail $
+                            map (\(TaskFailure mn dn m) -> (mn, dn, m)) e
+
+                        Success r ->
+                          emitGenerated objects r
 
                 name:names ->
                   Task.throw (Exit.MakeGeneratorModulesWithoutGenerators name names)
-
-
-listElmGenerateScriptsFolder :: Task.Task Exit.Make [FilePath]
-listElmGenerateScriptsFolder =
-  Task.eio
-    (\_ -> Exit.MakeNoGenerateScriptsFolder)
-    (try $ Dir.listDirectory "elm-generate-scripts" :: IO (Either IOError [FilePath]))
 
 
 
@@ -113,18 +127,13 @@ getStyle report =
     Just Json -> return Reporting.json
 
 
-
--- BUILD PROJECTS
-
-
-buildPaths :: Reporting.Style -> FilePath -> Details.Details -> NE.List FilePath -> Task Build.Artifacts
-buildPaths style root details paths =
-  Task.eio Exit.MakeCannotBuild $
-    Build.fromPaths style root details paths
-
-
-
--- GET MAINLESS
+getGeneratorFiles :: FilePath -> Task [FilePath]
+getGeneratorFiles directory =
+  Task.eio (\_ -> Exit.MakeNoGenerateScriptsFolder) $
+    do  result <- try $ Dir.listDirectory directory :: IO (Either IOError [FilePath])
+        return $ fmap
+          (filter (\p -> p /= "Generate.elm" && p /= "Generate"))
+          result
 
 
 getNoGenerators :: Build.Artifacts -> [ModuleName.Raw]
@@ -140,7 +149,7 @@ getNoGenerator modules root =
       then Nothing
       else Just name
 
-    Build.Outside name _ (Opt.LocalGraph generators _ _) ->
+    Build.Outside name _ (Opt.LocalGraph generators _ _ _) ->
       case generators of
         _:_  -> Nothing
         [] -> Just name
@@ -149,43 +158,14 @@ getNoGenerator modules root =
 hasGenerator :: ModuleName.Raw -> Build.Module -> Bool
 hasGenerator targetName modul =
   case modul of
-    Build.Fresh name _ (Opt.LocalGraph generators _ _) ->
+    Build.Fresh name _ (Opt.LocalGraph generators _ _ _) ->
       length generators /= 0 && name == targetName
 
     Build.Cached name mainIsDefined _ ->
       mainIsDefined && name == targetName
 
 
-
--- GENERATE
-
-
-generate :: Reporting.Style -> FilePath -> B.Builder -> NE.List ModuleName.Raw -> Task ()
-generate style interpreter builder names =
-  Task.io $
-    do  exitCode <- interpret interpreter builder
-        File.writeBuilder "elm.js" builder
-        -- Dir.createDirectoryIfMissing True (FP.takeDirectory target)
-        -- File.writeBuilder target builder
-        -- Reporting.reportGenerate style names target
-
-
-
--- INTERPRET
-
-
-interpret :: FilePath -> B.Builder -> IO SExit.ExitCode
-interpret interpreter javascript =
-  let
-    createProcess = (Proc.proc interpreter []) { Proc.std_in = Proc.CreatePipe }
-  in
-  Proc.withCreateProcess createProcess $ \(Just stdin) _ _ handle ->
-    do  B.hPutBuilder stdin javascript
-        IO.hClose stdin
-        Proc.waitForProcess handle
-
-
-getInterpreter :: Maybe String -> Task.Task Exit.Make FilePath
+getInterpreter :: Maybe String -> Task FilePath
 getInterpreter maybeName =
   case maybeName of
     Just name ->
@@ -198,7 +178,7 @@ getInterpreter maybeName =
             return (exe1 <|> exe2)
 
 
-getInterpreterHelp :: String -> IO (Maybe FilePath) -> Task.Task Exit.Make FilePath
+getInterpreterHelp :: String -> IO (Maybe FilePath) -> Task FilePath
 getInterpreterHelp name findExe =
   do  maybePath <- Task.io findExe
       case maybePath of
@@ -210,14 +190,170 @@ getInterpreterHelp name findExe =
 
 
 
--- TO BUILDER
+-- COMPILE GENERATORS
 
 
-toBuilder :: FilePath -> Details.Details -> Build.Artifacts -> Task B.Builder
+buildPaths :: Reporting.Style -> FilePath -> Details.Details -> NE.List FilePath -> Task Build.Artifacts
+buildPaths style root details paths =
+  Task.eio Exit.MakeCannotBuild $
+    Build.fromPaths style root details paths
+
+
+
+toBuilder :: FilePath -> Details.Details -> Build.Artifacts -> Task (Generate.Objects, B.Builder)
 toBuilder root details artifacts =
   Task.mapError Exit.MakeBadGenerate $
-    Generate.dev root details artifacts
+    Generate.devGetObjects root details artifacts
 
+
+
+-- RUN GENERATORS
+
+
+runGenerators :: FilePath -> B.Builder -> Task.Task x Generated
+runGenerators interpreter builder =
+  do  result <- interpret interpreter builder
+      Task.io $ File.writeBuilder "debug.js" builder
+      case JSON.decodeStrict' (TextEncoding.encodeUtf8 result) of
+        Just generated -> return generated
+        Nothing        -> error "nodejs emited bad json"
+
+        -- Dir.createDirectoryIfMissing True (FP.takeDirectory target)
+        -- File.writeBuilder target builder
+        -- Reporting.reportGenerate style names target
+
+
+data Generated
+  = Success [TaskSuccess]
+  | Failure [TaskFailure]
+
+
+data TaskSuccess
+  = TaskSuccess
+      { _s_moduleName :: String
+      , _s_declarationName :: String
+      , _s_body :: String
+      }
+
+
+data TaskFailure
+  = TaskFailure
+      { _f_moduleName :: String
+      , _f_declarationName :: String
+      , _f_message :: String
+      }
+
+
+instance FromJSON Generated where
+  parseJSON = JSON.withObject "Generated" $ \v ->
+    do  tipe <- v .: "type"
+        case tipe of
+          "success" -> fmap Success (v .: "results")
+          "errors"  -> fmap Failure (v .: "errors")
+          _         -> Control.Monad.fail ("Unexpeted type: `" ++ tipe ++ "`")
+
+
+instance FromJSON TaskSuccess where
+  parseJSON = JSON.withObject "TaskSuccess" $ \v -> TaskSuccess
+    <$> v .: "moduleName"
+    <*> v .: "declarationName"
+    <*> v .: "v"
+
+
+instance FromJSON TaskFailure where
+  parseJSON = JSON.withObject "TaskFailure" $ \v -> TaskFailure
+    <$> v .: "moduleName"
+    <*> v .: "declarationName"
+    <*> v .: "v"
+
+
+
+-- EMIT GENERATED
+
+
+emitGenerated :: Generate.Objects -> [TaskSuccess] -> Task ()
+emitGenerated (Generate.Objects _ locals) generated =
+  let results = gatherResults generated
+  in
+  Task.io $
+    do
+        fmap (\_ -> () ) $ mapM
+          (\(moduleName, graph) ->
+            if "Generate" `List.isPrefixOf` (Name.toChars moduleName) then
+              return ()
+            else
+              let inputPath = "elm-generate-scripts" </> Name.toChars moduleName <.> "elm"
+                  outputFolder = "src/Generated"
+                  outputPath = outputFolder </> Name.toChars moduleName <.> "elm"
+                  outputModule = "Generated." ++ Name.toChars moduleName
+              in
+              do  Dir.createDirectoryIfMissing True outputFolder
+                  inputContents <- TextIO.readFile inputPath
+                  let outputContents = emitModule graph (results ! (Name.toChars moduleName)) inputContents
+                  TextIO.writeFile outputPath outputContents
+          )
+          (Map.toList locals)
+
+
+emitModule :: Opt.LocalGraph -> Map.Map String String -> Text -> Text
+emitModule (Opt.LocalGraph generators _ _ moduleNameInSrc) generated text =
+  let startRow (Opt.Generator _ (r, _)) = r
+      sorted = List.sortOn startRow generators
+      replacements =
+        map
+          (\(Opt.Generator (Opt.Global _ name) inSrc) ->
+            let result = generated ! (Name.toChars name) in
+            (inSrc, Text.pack result)
+          )
+          sorted
+  in
+  Text.unlines $ replace 1 replacements (Text.lines text)
+
+
+replace :: Word16 -> [((Word16, Word16), Text)] -> [Text] -> [Text]
+replace currentRow replacements lines =
+  case replacements of
+    [] ->
+      lines
+
+    ((startRow, endRow), s) : xs ->
+      let (before, y) = splitAt (fromIntegral $ startRow - currentRow) lines
+          after = drop (fromIntegral $ endRow - startRow + 1) y
+      in
+      before ++ s:replace (endRow+1) xs after
+
+
+gatherResults :: [TaskSuccess] -> Map.Map String (Map.Map String String)
+gatherResults results =
+  foldr
+    (\(TaskSuccess moduleName declarationName result) m ->
+      Map.alter
+        (\mm -> Just $ Map.insert declarationName result (Maybe.fromMaybe Map.empty mm))
+        moduleName
+        m
+    )
+    Map.empty
+    results
+
+
+
+-- INTERPRET
+
+
+interpret :: FilePath -> B.Builder -> Task.Task x Text
+interpret interpreter javascript =
+  let
+    createProcess =
+      (Proc.proc interpreter [])
+        { Proc.std_in = Proc.CreatePipe, Proc.std_out = Proc.CreatePipe }
+  in
+  Task.io $ Proc.withCreateProcess createProcess $ \(Just stdin) (Just stdout) _ handle ->
+    do  B.hPutBuilder stdin javascript
+        IO.hClose stdin
+        exitCode <- Proc.waitForProcess handle
+        case exitCode of
+          SExit.ExitSuccess   -> TextIO.hGetContents stdout
+          SExit.ExitFailure _ -> error "running nodejs"
 
 
 -- PARSERS
@@ -234,8 +370,8 @@ reportType =
     }
 
 
-interpreter :: Parser String
-interpreter =
+interpreterPath :: Parser String
+interpreterPath =
   Parser
     { _singular = "interpreter"
     , _plural = "interpreters"

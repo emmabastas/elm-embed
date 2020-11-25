@@ -231,7 +231,7 @@ fieldsToList fields =
 
 data Module =
   Module
-    { _name    :: ModuleName.Canonical
+    { _name    :: A.Located ModuleName.Canonical
     , _exports :: Exports
     , _docs    :: Src.Docs
     , _decls   :: Decls
