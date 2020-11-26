@@ -38,9 +38,15 @@ if (errors.length !== 0) {
   process.exit(0)
 }
 
-let elmData = []
+let elmData = {}
 for (let { moduleName, declarationName, v } of successes) {
-  elmData.push({ moduleName, declarationName, v: toElmValue(v) })
+  if (!elmData[moduleName])
+    elmData[moduleName] = {}
+
+  if (declarationName.startsWith("_"))
+    declarationName = declarationName.slice(1)
+
+  elmData[moduleName][declarationName] = toElmValue(v)
 }
 
 console.log(JSON.stringify({

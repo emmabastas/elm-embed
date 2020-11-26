@@ -224,16 +224,8 @@ runGenerators interpreter builder =
 
 
 data Generated
-  = Success [TaskSuccess]
+  = Success (Map.Map String (Map.Map String String))
   | Failure [TaskFailure]
-
-
-data TaskSuccess
-  = TaskSuccess
-      { _s_moduleName :: String
-      , _s_declarationName :: String
-      , _s_body :: String
-      }
 
 
 data TaskFailure
@@ -253,13 +245,6 @@ instance FromJSON Generated where
           _         -> Control.Monad.fail ("Unexpeted type: `" ++ tipe ++ "`")
 
 
-instance FromJSON TaskSuccess where
-  parseJSON = JSON.withObject "TaskSuccess" $ \v -> TaskSuccess
-    <$> v .: "moduleName"
-    <*> v .: "declarationName"
-    <*> v .: "v"
-
-
 instance FromJSON TaskFailure where
   parseJSON = JSON.withObject "TaskFailure" $ \v -> TaskFailure
     <$> v .: "moduleName"
@@ -271,10 +256,8 @@ instance FromJSON TaskFailure where
 -- EMIT GENERATED
 
 
-emitGenerated :: Generate.Objects -> [TaskSuccess] -> Task ()
+emitGenerated :: Generate.Objects -> Map.Map String (Map.Map String String) -> Task ()
 emitGenerated (Generate.Objects _ locals) generated =
-  let results = gatherResults generated
-  in
   Task.io $
     do
         fmap (\_ -> () ) $ mapM
@@ -289,7 +272,7 @@ emitGenerated (Generate.Objects _ locals) generated =
               in
               do  Dir.createDirectoryIfMissing True outputFolder
                   inputContents <- TextIO.readFile inputPath
-                  let outputContents = emitModule graph (results ! (Name.toChars moduleName)) inputContents
+                  let outputContents = emitModule graph (generated ! (Name.toChars moduleName)) inputContents
                   TextIO.writeFile outputPath outputContents
           )
           (Map.toList locals)
@@ -321,19 +304,6 @@ replace currentRow replacements lines =
           after = drop (fromIntegral $ endRow - startRow + 1) y
       in
       before ++ s:replace (endRow+1) xs after
-
-
-gatherResults :: [TaskSuccess] -> Map.Map String (Map.Map String String)
-gatherResults results =
-  foldr
-    (\(TaskSuccess moduleName declarationName result) m ->
-      Map.alter
-        (\mm -> Just $ Map.insert declarationName result (Maybe.fromMaybe Map.empty mm))
-        moduleName
-        m
-    )
-    Map.empty
-    results
 
 
 
