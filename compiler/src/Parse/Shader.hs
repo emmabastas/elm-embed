@@ -44,7 +44,7 @@ shader start@(A.Position row col) =
 
 parseBlock :: Parser E.Expr [Char]
 parseBlock =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr eerr ->
     let
       !pos6 = plusPtr pos 6
     in
@@ -66,7 +66,7 @@ parseBlock =
             !off = minusPtr pos6 (unsafeForeignPtrToPtr src)
             !len = minusPtr newPos pos6
             !block = BS_UTF8.toString (B.PS src off len)
-            !newState = P.State src (plusPtr newPos 2) end indent newRow (newCol + 2)
+            !newState = P.State src (plusPtr newPos 2) end indent newRow (newCol + 2) start
           in
           cok block newState
 
@@ -131,7 +131,7 @@ parseGlsl startRow startCol src =
 
 failure :: Row -> Col -> [Char] -> Parser E.Expr a
 failure row col msg =
-  P.Parser $ \(P.State _ _ _ _ _ _) _ _ cerr _ ->
+  P.Parser $ \(P.State _ _ _ _ _ _ _) _ _ cerr _ ->
     cerr row col (E.ShaderProblem msg)
 
 

@@ -48,7 +48,7 @@ data Number
 
 number :: (Row -> Col -> x) -> (E.Number -> Row -> Col -> x) -> Parser x Number
 number toExpectation toError =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr eerr ->
     if pos >= end then
       eerr row col toExpectation
 
@@ -76,7 +76,7 @@ number toExpectation toError =
               let
                 !newCol = col + fromIntegral (minusPtr newPos pos)
                 !integer = Int n
-                !newState = P.State src newPos end indent row newCol
+                !newState = P.State src newPos end indent row newCol start
               in
               cok integer newState
 
@@ -85,7 +85,7 @@ number toExpectation toError =
                 !newCol = col + fromIntegral (minusPtr newPos pos)
                 !copy = EF.fromPtr pos newPos
                 !float = Float copy
-                !newState = P.State src newPos end indent row newCol
+                !newState = P.State src newPos end indent row newCol start
               in
               cok float newState
 
@@ -290,7 +290,7 @@ stepHex pos end word acc
 
 precedence :: (Row -> Col -> x) -> Parser x Binop.Precedence
 precedence toExpectation =
-  P.Parser $ \(P.State src pos end indent row col) cok _ _ eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ _ eerr ->
     if pos >= end then
       eerr row col toExpectation
 
@@ -299,7 +299,7 @@ precedence toExpectation =
       if isDecimalDigit word then
         cok
           (Binop.Precedence (fromIntegral (word - 0x30 {-0-})))
-          (P.State src (plusPtr pos 1) end indent row (col + 1))
+          (P.State src (plusPtr pos 1) end indent row (col + 1) start)
 
       else
         eerr row col toExpectation

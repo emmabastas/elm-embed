@@ -67,7 +67,7 @@ termHelp start =
               return (A.at start end (Src.PInt int))
 
             Number.Float float ->
-              P.Parser $ \(P.State _ _ _ _ row col) _ _ cerr _ ->
+              P.Parser $ \(P.State _ _ _ _ row col _) _ _ cerr _ ->
                 let
                   width = fromIntegral (Utf8.size float)
                 in
@@ -87,7 +87,7 @@ termHelp start =
 
 wildcard :: Parser E.Pattern ()
 wildcard =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr eerr ->
     if pos == end || P.unsafeIndex pos /= 0x5F {- _ -} then
       eerr row col E.PStart
     else
@@ -99,7 +99,7 @@ wildcard =
         let (# badPos, badCol #) = Var.chompInnerChars newPos end newCol in
         cerr row col (E.PWildcardNotVar (Name.fromPtr pos badPos) (fromIntegral (badCol - col)))
       else
-        let !newState = P.State src newPos end indent row newCol in
+        let !newState = P.State src newPos end indent row newCol start in
         cok () newState
 
 

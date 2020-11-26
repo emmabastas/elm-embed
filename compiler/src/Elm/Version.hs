@@ -155,7 +155,7 @@ parser =
 
 numberParser :: P.Parser (Row, Col) Word16
 numberParser =
-  P.Parser $ \(P.State src pos end indent row col) cok _ _ eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ _ eerr ->
     if pos >= end then
       eerr row col (,)
     else
@@ -163,7 +163,7 @@ numberParser =
       if word == 0x30 {-0-} then
 
         let
-          !newState = P.State src (plusPtr pos 1) end indent row (col + 1)
+          !newState = P.State src (plusPtr pos 1) end indent row (col + 1) start
         in
         cok 0 newState
 
@@ -171,7 +171,7 @@ numberParser =
 
         let
           (# total, newPos #) = chompWord16 (plusPtr pos 1) end (fromIntegral (word - 0x30))
-          !newState = P.State src newPos end indent row (col + fromIntegral (minusPtr newPos pos))
+          !newState = P.State src newPos end indent row (col + fromIntegral (minusPtr newPos pos)) start
         in
         cok total newState
 

@@ -598,7 +598,7 @@ pArrayHelp !len revEntries =
 
 pString :: (Row -> Col -> ParseError) -> Parser P.Snippet
 pString start =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start_) cok _ cerr eerr ->
     if pos < end && P.unsafeIndex pos == 0x22 {-"-} then
 
       let
@@ -614,7 +614,7 @@ pString start =
             !off = minusPtr pos1 (unsafeForeignPtrToPtr src)
             !len = minusPtr newPos pos1 - 1
             !snp = P.Snippet src off len row col1
-            !newState = P.State src newPos end indent newRow newCol
+            !newState = P.State src newPos end indent newRow newCol start_
           in
           cok snp newState
 
@@ -693,7 +693,7 @@ isHex word =
 
 spaces :: Parser ()
 spaces =
-  P.Parser $ \state@(P.State src pos end indent row col) cok eok _ _ ->
+  P.Parser $ \state@(P.State src pos end indent row col start) cok eok _ _ ->
     let
       (# newPos, newRow, newCol #) =
         eatSpaces pos end row col
@@ -703,7 +703,7 @@ spaces =
     else
       let
         !newState =
-          P.State src newPos end indent newRow newCol
+          P.State src newPos end indent newRow newCol start
       in
       cok () newState
 
@@ -729,7 +729,7 @@ eatSpaces pos end row col =
 
 pInt :: Parser AST_
 pInt =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr eerr ->
     if pos >= end then
       eerr row col Start
 
@@ -742,7 +742,7 @@ pInt =
 
         let
           !pos1 = plusPtr pos 1
-          !newState = P.State src pos1 end indent row (col + 1)
+          !newState = P.State src pos1 end indent row (col + 1) start
         in
         if pos1 < end then
           let !word1 = P.unsafeIndex pos1 in
@@ -766,7 +766,7 @@ pInt =
           GoodInt ->
             let
               !newState =
-                P.State src newPos end indent row (col + len)
+                P.State src newPos end indent row (col + len) start
             in
             cok (Int n) newState
 

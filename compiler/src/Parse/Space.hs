@@ -40,14 +40,14 @@ type Parser x a =
 
 chomp :: (E.Space -> Row -> Col -> x) -> P.Parser x ()
 chomp toError =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr _ ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr _ ->
     let
       (# status, newPos, newRow, newCol #) = eatSpaces pos end row col
     in
     case status of
       Good ->
         let
-          !newState = P.State src newPos end indent newRow newCol
+          !newState = P.State src newPos end indent newRow newCol start
         in
         cok () newState
 
@@ -61,7 +61,7 @@ chomp toError =
 
 checkIndent :: A.Position -> (Row -> Col -> x) -> P.Parser x ()
 checkIndent (A.Position endRow endCol) toError =
-  P.Parser $ \state@(P.State _ _ _ indent _ col) _ eok _ eerr ->
+  P.Parser $ \state@(P.State _ _ _ indent _ col _) _ eok _ eerr ->
     if col > indent && col > 1
     then eok () state
     else eerr endRow endCol toError
@@ -69,7 +69,7 @@ checkIndent (A.Position endRow endCol) toError =
 
 checkAligned :: (Word16 -> Row -> Col -> x) -> P.Parser x ()
 checkAligned toError =
-  P.Parser $ \state@(P.State _ _ _ indent row col) _ eok _ eerr ->
+  P.Parser $ \state@(P.State _ _ _ indent row col _) _ eok _ eerr ->
     if col == indent
     then eok () state
     else eerr row col (toError indent)
@@ -77,7 +77,7 @@ checkAligned toError =
 
 checkFreshLine :: (Row -> Col -> x) -> P.Parser x ()
 checkFreshLine toError =
-  P.Parser $ \state@(P.State _ _ _ _ row col) _ eok _ eerr ->
+  P.Parser $ \state@(P.State _ _ _ _ row col _) _ eok _ eerr ->
     if col == 1
     then eok () state
     else eerr row col toError
@@ -89,7 +89,7 @@ checkFreshLine toError =
 
 chompAndCheckIndent :: (E.Space -> Row -> Col -> x) -> (Row -> Col -> x) -> P.Parser x ()
 chompAndCheckIndent toSpaceError toIndentError =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr _ ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr _ ->
     let
       (# status, newPos, newRow, newCol #) = eatSpaces pos end row col
     in
@@ -99,7 +99,7 @@ chompAndCheckIndent toSpaceError toIndentError =
         then
 
           let
-            !newState = P.State src newPos end indent newRow newCol
+            !newState = P.State src newPos end indent newRow newCol start
           in
           cok () newState
 
@@ -241,7 +241,7 @@ eatMultiCommentHelp pos end row col openComments =
 
 docComment :: (Row -> Col -> x) -> (E.Space -> Row -> Col -> x) -> P.Parser x Src.Comment
 docComment toExpectation toSpaceError =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr eerr ->
     let
       !pos3 = plusPtr pos 3
     in
@@ -263,7 +263,7 @@ docComment toExpectation toSpaceError =
             !len = minusPtr newPos pos3 - 2
             !snippet = P.Snippet src off len row col3
             !comment = Src.Comment snippet
-            !newState = P.State src newPos end indent newRow newCol
+            !newState = P.State src newPos end indent newRow newCol start
           in
           cok comment newState
 

@@ -239,7 +239,7 @@ parser =
       hiOp <- parseOp
       P.word1 0x20 {- -} BadFormat
       higher <- parseVersion
-      P.Parser $ \state@(P.State _ _ _ _ row col) _ eok _ eerr ->
+      P.Parser $ \state@(P.State _ _ _ _ row col _) _ eok _ eerr ->
         if lower < higher
         then eok (Range lower loOp hiOp higher) state
         else eerr row col (\_ _ -> InvalidRange lower higher)

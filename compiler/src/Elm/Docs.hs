@@ -376,10 +376,10 @@ chompOperator =
 --
 chompUntilDocs :: Parser Bool
 chompUntilDocs =
-  P.Parser $ \(P.State src pos end indent row col) cok _ _ _ ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ _ _ ->
     let
       (# isDocs, newPos, newRow, newCol #) = untilDocs pos end row col
-      !newState = P.State src newPos end indent newRow newCol
+      !newState = P.State src newPos end indent newRow newCol start
     in
     cok isDocs newState
 

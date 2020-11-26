@@ -319,7 +319,7 @@ parser =
 
 parseName :: (Word8 -> Bool) -> (Word8 -> Bool) -> P.Parser (Row, Col) (Utf8.Utf8 t)
 parseName isGoodStart isGoodInner =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr eerr ->
     if pos >= end then
       eerr row col (,)
     else
@@ -333,7 +333,7 @@ parseName isGoodStart isGoodInner =
           !newCol = col + len
         in
         if isGood && len < 256 then
-          let !newState = P.State src newPos end indent row newCol in
+          let !newState = P.State src newPos end indent row newCol start in
           cok (Utf8.fromPtr pos newPos) newState
         else
           cerr row newCol (,)

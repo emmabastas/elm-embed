@@ -81,12 +81,12 @@ decoder =
 
 parser :: P.Parser (Row, Col) Raw
 parser =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr eerr ->
     let
       (# isGood, newPos, newCol #) = chompStart pos end col
     in
     if isGood && minusPtr newPos pos < 256 then
-      let !newState = P.State src newPos end indent row newCol in
+      let !newState = P.State src newPos end indent row newCol start in
       cok (Utf8.fromPtr pos newPos) newState
 
     else if col == newCol then

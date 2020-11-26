@@ -24,7 +24,7 @@ import qualified Reporting.Error.Syntax as E
 
 character :: (Row -> Col -> x) -> (E.Char -> Row -> Col -> x) -> Parser x ES.String
 character toExpectation toError =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr eerr ->
     if pos >= end || P.unsafeIndex pos /= 0x27 {- ' -} then
       eerr row col toExpectation
 
@@ -35,7 +35,7 @@ character toExpectation toError =
             cerr row col (toError (E.CharNotString (fromIntegral (newCol - col))))
           else
             let
-              !newState = P.State src newPos end indent row newCol
+              !newState = P.State src newPos end indent row newCol start
               !char = ES.fromChunks [mostRecent]
             in
             cok char newState
@@ -99,7 +99,7 @@ chompChar pos end row col numChars mostRecent =
 
 string :: (Row -> Col -> x) -> (E.String -> Row -> Col -> x) -> Parser x ES.String
 string toExpectation toError =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr eerr ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr eerr ->
     if isDoubleQuote pos end then
 
       let
@@ -122,7 +122,7 @@ string toExpectation toError =
         Ok newPos newRow newCol utf8 ->
           let
             !newState =
-              P.State src newPos end indent newRow newCol
+              P.State src newPos end indent newRow newCol start
           in
           cok utf8 newState
 

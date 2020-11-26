@@ -379,13 +379,13 @@ headerKeyDecoder =
 
 boundParser :: Int -> x -> P.Parser x Json.String
 boundParser bound tooLong =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr _ ->
+  P.Parser $ \(P.State src pos end indent row col start) cok _ cerr _ ->
     let
       len = minusPtr end pos
       newCol = col + fromIntegral len
     in
     if len < bound
-    then cok (Json.fromPtr pos end) (P.State src end end indent row newCol)
+    then cok (Json.fromPtr pos end) (P.State src end end indent row newCol start)
     else cerr row newCol (\_ _ -> tooLong)
 
 

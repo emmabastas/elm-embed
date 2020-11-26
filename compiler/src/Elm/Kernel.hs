@@ -117,13 +117,13 @@ ignoreError _ _ _ =
 
 parseChunks :: VarTable -> Enums -> Fields -> Parser () [Chunk]
 parseChunks vtable enums fields =
-  P.Parser $ \(P.State src pos end indent row col) cok _ cerr _ ->
+  P.Parser $ \(P.State src pos end indent row col state) cok _ cerr _ ->
     let
       (# chunks, newPos, newRow, newCol #) =
         chompChunks vtable enums fields src pos end row col pos []
     in
     if newPos == end then
-      cok chunks (P.State src newPos end indent newRow newCol)
+      cok chunks (P.State src newPos end indent newRow newCol state)
     else
       cerr row col toError
 
