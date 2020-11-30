@@ -272,7 +272,7 @@ constrainList :: RTV -> A.Region -> [Can.Expr] -> Expected Type -> IO Constraint
 constrainList rtv region entries expected =
   do  entryVar <- mkFlexVar
       let entryType = VarN entryVar
-      let listType = AppN ModuleName.list Name.list [entryType]
+      let listType = AppN Nothing ModuleName.list Name.list [entryType]
 
       entryCons <-
         Index.indexedTraverse (constrainListEntry rtv region entryType) entries
@@ -474,7 +474,7 @@ constrainShader region (Shader.Types attributes uniforms varyings) expected =
       let unifType = VarN unifVar
 
       let shaderType =
-            AppN ModuleName.webgl Name.shader
+            AppN Nothing ModuleName.webgl Name.shader
               [ toShaderRecord attributes attrType
               , toShaderRecord uniforms unifType
               , toShaderRecord varyings EmptyRecordN

@@ -49,11 +49,11 @@ canonicalize env (A.At typeRegion tipe) =
         Result.ok (Can.TVar x)
 
     Src.TType region name args ->
-        canonicalizeType env typeRegion name args =<<
+        canonicalizeType env typeRegion region name args =<<
           Env.findType region env name
 
     Src.TTypeQual region home name args ->
-        canonicalizeType env typeRegion name args =<<
+        canonicalizeType env typeRegion region name args =<<
           Env.findTypeQual region env home name
 
     Src.TLambda a b ->
@@ -98,8 +98,8 @@ canonicalizeFields env fields =
 -- CANONICALIZE TYPE
 
 
-canonicalizeType :: Env.Env -> A.Region -> Name.Name -> [Src.Type] -> Env.Type -> Result i w Can.Type
-canonicalizeType env region name args info =
+canonicalizeType :: Env.Env -> A.Region -> A.Region -> Name.Name -> [Src.Type] -> Env.Type -> Result i w Can.Type
+canonicalizeType env region nameRegion name args info =
   do  cargs <- traverse (canonicalize env) args
       case info of
         Env.Alias arity home argNames aliasedType ->
@@ -108,7 +108,7 @@ canonicalizeType env region name args info =
 
         Env.Union arity home ->
           checkArity arity region name args $
-            Can.TType home name cargs
+            Can.TType (Just nameRegion) home name cargs
 
 
 checkArity :: Int -> A.Region -> Name.Name -> [A.Located arg] -> answer -> Result i w answer
@@ -133,7 +133,7 @@ addFreeVars freeVars tipe =
     Can.TVar var ->
       Map.insert var () freeVars
 
-    Can.TType _ _ args ->
+    Can.TType _ _ _ args ->
       List.foldl' addFreeVars freeVars args
 
     Can.TRecord fields Nothing ->

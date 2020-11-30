@@ -749,7 +749,7 @@ toVarCtor name ctor =
     Env.Ctor home typeName (Can.Union vars _ _ opts) index args ->
       let
         freeVars = Map.fromList (map (\v -> (v, ())) vars)
-        result = Can.TType home typeName (map Can.TVar vars)
+        result = Can.TType Nothing home typeName (map Can.TVar vars)
         tipe = foldr Can.TLambda result args
       in
       Can.VarCtor opts home name index (Can.Forall freeVars tipe)

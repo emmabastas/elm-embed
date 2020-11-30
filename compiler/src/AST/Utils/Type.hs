@@ -60,8 +60,8 @@ dealiasHelp typeTable tipe =
     TAlias home name args t' ->
       TAlias home name (map (fmap (dealiasHelp typeTable)) args) t'
 
-    TType home name args ->
-      TType home name (map (dealiasHelp typeTable) args)
+    TType region home name args ->
+      TType region home name (map (dealiasHelp typeTable) args)
 
     TUnit ->
       TUnit
@@ -97,8 +97,8 @@ deepDealias tipe =
     TAlias _ _ args tipe' ->
       deepDealias (dealias args tipe')
 
-    TType home name args ->
-      TType home name (map deepDealias args)
+    TType region home name args ->
+      TType region home name (map deepDealias args)
 
     TUnit ->
       TUnit

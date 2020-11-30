@@ -66,7 +66,7 @@ add (A.At region pattern) expectation state =
     Can.PList patterns ->
       do  entryVar <- mkFlexVar
           let entryType = VarN entryVar
-          let listType = AppN ModuleName.list Name.list [entryType]
+          let listType = AppN Nothing ModuleName.list Name.list [entryType]
 
           (State headers vars revCons) <-
             foldM (addEntry region entryType) state (Index.indexedMap (,) patterns)
@@ -77,7 +77,7 @@ add (A.At region pattern) expectation state =
     Can.PCons headPattern tailPattern ->
       do  entryVar <- mkFlexVar
           let entryType = VarN entryVar
-          let listType = AppN ModuleName.list Name.list [entryType]
+          let listType = AppN Nothing ModuleName.list Name.list [entryType]
 
           let headExpectation = E.PNoExpectation entryType
           let tailExpectation = E.PFromContext region E.PTail listType
@@ -219,7 +219,7 @@ addCtor region home typeName typeVarNames ctorName args expectation state =
       (State headers vars revCons) <-
         foldM (addCtorArg region ctorName freeVarDict) state args
 
-      let ctorType = AppN home typeName (map snd typePairs)
+      let ctorType = AppN (Just region) home typeName (map snd typePairs)
       let ctorCon = CPattern region (E.PCtor ctorName) ctorType expectation
 
       return $

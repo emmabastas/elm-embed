@@ -80,7 +80,7 @@ type Variable =
 
 
 data FlatType
-    = App1 ModuleName.Canonical Name.Name [Variable]
+    = App1 (Maybe A.Region) ModuleName.Canonical Name.Name [Variable]
     | Fun1 Variable Variable
     | EmptyRecord1
     | Record1 (Map.Map Name.Name Variable) Variable
@@ -92,7 +92,7 @@ data Type
     = PlaceHolder Name.Name
     | AliasN ModuleName.Canonical Name.Name [(Name.Name, Type)] Type
     | VarN Variable
-    | AppN ModuleName.Canonical Name.Name [Type]
+    | AppN (Maybe A.Region) ModuleName.Canonical Name.Name [Type]
     | FunN Type Type
     | EmptyRecordN
     | RecordN (Map.Map Name.Name Type) Type
@@ -198,32 +198,32 @@ infixr 9 ==>
 
 {-# NOINLINE int #-}
 int :: Type
-int = AppN ModuleName.basics "Int" []
+int = AppN Nothing ModuleName.basics "Int" []
 
 
 {-# NOINLINE float #-}
 float :: Type
-float = AppN ModuleName.basics "Float" []
+float = AppN Nothing ModuleName.basics "Float" []
 
 
 {-# NOINLINE char #-}
 char :: Type
-char = AppN ModuleName.char "Char" []
+char = AppN Nothing ModuleName.char "Char" []
 
 
 {-# NOINLINE string #-}
 string :: Type
-string = AppN ModuleName.string "String" []
+string = AppN Nothing ModuleName.string "String" []
 
 
 {-# NOINLINE bool #-}
 bool :: Type
-bool = AppN ModuleName.basics "Bool" []
+bool = AppN Nothing ModuleName.basics "Bool" []
 
 
 {-# NOINLINE never #-}
 never :: Type
-never = AppN ModuleName.basics "Never" []
+never = AppN Nothing ModuleName.basics "Never" []
 
 
 
@@ -232,27 +232,27 @@ never = AppN ModuleName.basics "Never" []
 
 {-# NOINLINE vec2 #-}
 vec2 :: Type
-vec2 = AppN ModuleName.vector2 "Vec2" []
+vec2 = AppN Nothing ModuleName.vector2 "Vec2" []
 
 
 {-# NOINLINE vec3 #-}
 vec3 :: Type
-vec3 = AppN ModuleName.vector3 "Vec3" []
+vec3 = AppN Nothing ModuleName.vector3 "Vec3" []
 
 
 {-# NOINLINE vec4 #-}
 vec4 :: Type
-vec4 = AppN ModuleName.vector4 "Vec4" []
+vec4 = AppN Nothing ModuleName.vector4 "Vec4" []
 
 
 {-# NOINLINE mat4 #-}
 mat4 :: Type
-mat4 = AppN ModuleName.matrix4 "Mat4" []
+mat4 = AppN Nothing ModuleName.matrix4 "Mat4" []
 
 
 {-# NOINLINE texture #-}
 texture :: Type
-texture = AppN ModuleName.texture "Texture" []
+texture = AppN Nothing ModuleName.texture "Texture" []
 
 
 
@@ -387,8 +387,8 @@ variableToCanType variable =
 termToCanType :: FlatType -> StateT NameState IO Can.Type
 termToCanType term =
   case term of
-    App1 home name args ->
-      Can.TType home name <$> traverse variableToCanType args
+    App1 region home name args ->
+      Can.TType region home name <$> traverse variableToCanType args
 
     Fun1 a b ->
       Can.TLambda
@@ -506,7 +506,7 @@ superToSuper super =
 termToErrorType :: FlatType -> StateT NameState IO ET.Type
 termToErrorType term =
   case term of
-    App1 home name args ->
+    App1 _ home name args ->
       ET.Type home name <$> traverse variableToErrorType args
 
     Fun1 a b ->
@@ -679,7 +679,7 @@ getVarNames var takenNames =
 
               Structure flatType ->
                 case flatType of
-                  App1 _ _ args ->
+                  App1 _ _ _ args ->
                     foldrM getVarNames takenNames args
 
                   Fun1 arg body ->

@@ -43,7 +43,7 @@ toEncoder tipe =
     Can.TTuple a b c ->
       encodeTuple a b c
 
-    Can.TType _ name args ->
+    Can.TType _ _ name args ->
       case args of
         []
           | name == Name.float  -> encode "float"
@@ -171,7 +171,7 @@ toDecoder tipe =
     Can.TTuple a b c ->
       decodeTuple a b c
 
-    Can.TType _ name args ->
+    Can.TType _ _ name args ->
       case args of
         []
           | name == Name.float  -> decode "float"

@@ -191,7 +191,7 @@ type FreeVars = Map.Map Name ()
 data Type
   = TLambda Type Type
   | TVar Name
-  | TType ModuleName.Canonical Name [Type]
+  | TType (Maybe A.Region) ModuleName.Canonical Name [Type]
   | TRecord (Map.Map Name FieldType) (Maybe Name)
   | TUnit
   | TTuple Type Type (Maybe Type)
@@ -359,11 +359,12 @@ instance Binary Type where
       TUnit              -> putWord8 3
       TTuple a b c       -> putWord8 4 >> put a >> put b >> put c
       TAlias a b c d     -> putWord8 5 >> put a >> put b >> put c >> put d
-      TType home name ts ->
+      TType home region name ts ->
         let potentialWord = length ts + 7 in
         if potentialWord <= fromIntegral (maxBound :: Word8) then
           do  putWord8 (fromIntegral potentialWord)
               put home
+              put region
               put name
               mapM_ put ts
         else
@@ -378,8 +379,8 @@ instance Binary Type where
           3 -> return TUnit
           4 -> liftM3 TTuple get get get
           5 -> liftM4 TAlias get get get get
-          6 -> liftM3 TType get get get
-          n -> liftM3 TType get get (replicateM (fromIntegral (n - 7)) get)
+          6 -> liftM4 TType get get get get
+          n -> liftM4 TType get get get (replicateM (fromIntegral (n - 7)) get)
 
 
 instance Binary AliasType where

@@ -38,8 +38,8 @@ fromSrcType freeVars sourceType =
     Can.TVar name ->
       return (freeVars ! name)
 
-    Can.TType home name args ->
-      AppN home name <$> traverse (fromSrcType freeVars) args
+    Can.TType region home name args ->
+      AppN region home name <$> traverse (fromSrcType freeVars) args
 
     Can.TAlias home name args aliasedType ->
       do  targs <- traverse (traverse (fromSrcType freeVars)) args

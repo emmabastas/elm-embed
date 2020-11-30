@@ -370,7 +370,7 @@ adjustRankContent youngMark visitMark groupRank content =
 
       Structure flatType ->
         case flatType of
-          App1 _ _ args ->
+          App1 _ _ _ args ->
             foldM (\rank arg -> max rank <$> go arg) outermostRank args
 
           Fun1 arg result ->
@@ -441,9 +441,9 @@ typeToVar rank pools aliasDict tipe =
     VarN v ->
       return v
 
-    AppN home name args ->
+    AppN region home name args ->
       do  argVars <- traverse go args
-          register rank pools (Structure (App1 home name argVars))
+          register rank pools (Structure (App1 region home name argVars))
 
     FunN a b ->
       do  aVar <- go a
@@ -529,9 +529,9 @@ srcTypeToVar rank pools flexVars srcType =
     Can.TVar name ->
       return (flexVars ! name)
 
-    Can.TType home name args ->
+    Can.TType region home name args ->
       do  argVars <- traverse go args
-          register rank pools (Structure (App1 home name argVars))
+          register rank pools (Structure (App1 region home name argVars))
 
     Can.TRecord fields maybeExt ->
       do  fieldVars <- traverse (srcFieldTypeToVar rank pools flexVars) fields
@@ -669,7 +669,7 @@ restoreContent content =
 
     Structure term ->
       case term of
-        App1 _ _ args ->
+        App1 _ _ _ args ->
           mapM_ restore args
 
         Fun1 arg result ->
@@ -708,8 +708,8 @@ restoreContent content =
 traverseFlatType :: (Variable -> IO Variable) -> FlatType -> IO FlatType
 traverseFlatType f flatType =
   case flatType of
-    App1 home name args ->
-        liftM (App1 home name) (traverse f args)
+    App1 region home name args ->
+        liftM (App1 region home name) (traverse f args)
 
     Fun1 a b ->
         liftM2 Fun1 (f a) (f b)

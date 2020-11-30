@@ -45,7 +45,7 @@ occursHelp seen var foundCycle =
           Structure term ->
               let newSeen = var : seen in
               case term of
-                App1 _ _ args ->
+                App1 _ _ _ args ->
                     foldrM (occursHelp newSeen) foundCycle args
 
                 Fun1 a b ->

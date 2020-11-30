@@ -153,7 +153,7 @@ list =
     consCtor =
       Can.Ctor consName Index.second 2
         [ Can.TVar "a"
-        , Can.TType ModuleName.list Name.list [Can.TVar "a"]
+        , Can.TType Nothing ModuleName.list Name.list [Can.TVar "a"]
         ]
   in
   Can.Union ["a"] [ nilCtor, consCtor ] 2 Can.Normal

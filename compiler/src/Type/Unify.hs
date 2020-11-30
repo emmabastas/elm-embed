@@ -375,13 +375,13 @@ isNumber home name =
 unifyFlexSuperStructure :: Context -> SuperType -> FlatType -> Unify ()
 unifyFlexSuperStructure context super flatType =
   case flatType of
-    App1 home name [] ->
+    App1 _ home name [] ->
       if atomMatchesSuper super home name then
         merge context (Structure flatType)
       else
         mismatch
 
-    App1 home name [variable] | home == ModuleName.list && name == Name.list ->
+    App1 _ home name [variable] | home == ModuleName.list && name == Name.list ->
       case super of
         Number ->
             mismatch
@@ -530,7 +530,7 @@ unifyStructure context flatType content otherContent =
 
     Structure otherFlatType ->
         case (flatType, otherFlatType) of
-          (App1 home name args, App1 otherHome otherName otherArgs) | home == otherHome && name == otherName ->
+          (App1 _ home name args, App1 _ otherHome otherName otherArgs) | home == otherHome && name == otherName ->
               Unify $ \vars ok err ->
                 let
                   ok1 vars1 () =

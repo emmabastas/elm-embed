@@ -212,7 +212,7 @@ canToDoc localizer context tipe =
     Can.TVar name ->
       D.fromName name
 
-    Can.TType home name args ->
+    Can.TType _ home name args ->
       apply context
         (L.toDoc localizer home name)
         (map (canToDoc localizer App) args)

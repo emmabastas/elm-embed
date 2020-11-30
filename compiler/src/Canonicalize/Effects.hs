@@ -82,7 +82,7 @@ canonicalizePort :: Env.Env -> Src.Port -> Result i w (Name.Name, Can.Port)
 canonicalizePort env (Src.Port (A.At region portName) tipe) =
   do  (Can.Forall freeVars ctipe) <- Type.toAnnotation env tipe
       case reverse (Type.delambda (Type.deepDealias ctipe)) of
-        Can.TType home name [msg] : revArgs
+        Can.TType _ home name [msg] : revArgs
            | home == ModuleName.cmd && name == Name.cmd ->
                 case revArgs of
                   [] ->
@@ -163,7 +163,7 @@ checkPayload tipe =
     Can.TAlias _ _ args aliasedType ->
       checkPayload (Type.dealias args aliasedType)
 
-    Can.TType home name args ->
+    Can.TType _ home name args ->
       case args of
         []
           | isJson home name -> Right ()

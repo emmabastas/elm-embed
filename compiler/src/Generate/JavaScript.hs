@@ -55,7 +55,7 @@ generate mode (Opt.GlobalGraph graph _) generators =
 addMain :: Mode.Mode -> Graph -> ModuleName.Canonical -> [Opt.Generator] -> State -> State
 addMain mode graph home generators state =
   foldr
-    (\(Opt.Generator name _) s -> addGlobal mode graph s name)
+    (\(Opt.Generator name _ _ ) s -> addGlobal mode graph s name)
     state
     generators
 
@@ -513,7 +513,7 @@ toGeneratorsList mode generators =
             ( JsName.fromLocal mn
             , JS.Object $
               map
-                (\(Opt.Generator (Opt.Global mn name) _) ->
+                (\(Opt.Generator (Opt.Global mn name) _ _) ->
                   ( JsName.fromLocal name
                   , JS.Ref $ JsName.fromGlobal mn name
                   )

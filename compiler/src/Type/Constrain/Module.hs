@@ -92,7 +92,7 @@ letCmd :: ModuleName.Canonical -> Name.Name -> Constraint -> IO Constraint
 letCmd home tipe constraint =
   do  msgVar <- mkFlexVar
       let msg = VarN msgVar
-      let cmdType = FunN (AppN home tipe [msg]) (AppN ModuleName.cmd Name.cmd [msg])
+      let cmdType = FunN (AppN Nothing home tipe [msg]) (AppN Nothing ModuleName.cmd Name.cmd [msg])
       let header = Map.singleton "command" (A.At A.zero cmdType)
       return $ CLet [msgVar] [] header CTrue constraint
 
@@ -101,7 +101,7 @@ letSub :: ModuleName.Canonical -> Name.Name -> Constraint -> IO Constraint
 letSub home tipe constraint =
   do  msgVar <- mkFlexVar
       let msg = VarN msgVar
-      let subType = FunN (AppN home tipe [msg]) (AppN ModuleName.sub Name.sub [msg])
+      let subType = FunN (AppN Nothing home tipe [msg]) (AppN Nothing ModuleName.sub Name.sub [msg])
       let header = Map.singleton "subscription" (A.At A.zero subType)
       return $ CLet [msgVar] [] header CTrue constraint
 
@@ -156,17 +156,17 @@ constrainEffects home r0 r1 r2 manager =
 
 effectList :: ModuleName.Canonical -> Name.Name -> Type -> Type
 effectList home name msg =
-  AppN ModuleName.list Name.list [AppN home name [msg]]
+  AppN Nothing ModuleName.list Name.list [AppN Nothing home name [msg]]
 
 
 task :: Type -> Type
 task answer =
-  AppN ModuleName.platform Name.task [ never, answer ]
+  AppN Nothing ModuleName.platform Name.task [ never, answer ]
 
 
 router :: Type -> Type -> Type
 router msg self =
-  AppN ModuleName.platform Name.router [ msg, self ]
+  AppN Nothing ModuleName.platform Name.router [ msg, self ]
 
 
 checkMap :: Name.Name -> ModuleName.Canonical -> Name.Name -> Constraint -> IO Constraint
@@ -180,4 +180,4 @@ checkMap name home tipe constraint =
 
 toMapType :: ModuleName.Canonical -> Name.Name -> Type -> Type -> Type
 toMapType home tipe a b =
-  (a ==> b) ==> AppN home tipe [a] ==> AppN home tipe [b]
+  (a ==> b) ==> AppN Nothing home tipe [a] ==> AppN Nothing home tipe [b]

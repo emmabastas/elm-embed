@@ -52,7 +52,7 @@ extract astType =
     Can.TVar x ->
       pure (T.Var x)
 
-    Can.TType home name args ->
+    Can.TType _ home name args ->
       addUnion (Opt.Global home name) (T.Type (toPublicName home name))
         <*> traverse extract args
 

@@ -282,13 +282,21 @@ emitGenerated (Generate.Objects _ locals) generated =
 
 emitModule :: Opt.LocalGraph -> String -> Map String String -> Text -> Text
 emitModule (Opt.LocalGraph generators _ _ moduleNameInSrc) moduleName generated text =
-  let startRow (Opt.Generator _ (A.Region (A.Position r _) _)) = r
+  let startRow (Opt.Generator _ _ (A.Region (A.Position r _) _)) = r
       sorted = List.sortOn startRow generators
       replacements =
-        map
-          (\(Opt.Generator (Opt.Global _ name) inSrc) ->
-            let result = generated ! (Name.toChars name) in
-            (inSrc, Text.pack result)
+        concatMap
+          (\(Opt.Generator (Opt.Global _ name) maybeTypeInSrc bodyInSrc) ->
+            let result = generated ! (Name.toChars name)
+            in
+            case maybeTypeInSrc of
+              Nothing ->
+                [ (bodyInSrc, Text.pack result) ]
+
+              Just typeInSrc ->
+                [ (typeInSrc, "")
+                , (bodyInSrc, Text.pack result)
+                ]
           )
           sorted
       replacements_ = (moduleNameInSrc, Text.pack moduleName) : replacements

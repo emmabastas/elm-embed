@@ -145,6 +145,7 @@ data LocalGraph =
 data Generator
   = Generator
     { name :: Global
+    , tipe :: Maybe A.Region
     , body :: A.Region
     }
 
@@ -391,10 +392,10 @@ instance Binary LocalGraph where
 
 
 instance Binary Generator where
-  put (Generator a b) =
-    put a >> put b
+  put (Generator a b c) =
+    put a >> put b >> put c
   get =
-    liftM2 Generator get get
+    liftM3 Generator get get get
 
 
 instance Binary Node where

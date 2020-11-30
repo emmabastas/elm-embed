@@ -247,15 +247,15 @@ addDef home annotations def graph =
 
 
 addDefHelp :: Annotations -> ModuleName.Canonical -> Name.Name -> [Can.Pattern] -> Can.Expr -> A.Region -> Opt.LocalGraph -> Result i w Opt.LocalGraph
-addDefHelp annotations home name args body region graph =
+addDefHelp annotations home name args body bodyRegion graph =
   let
     (Can.Forall _ tipe) = annotations ! name
   in
-    case Type.deepDealias tipe of
-      Can.TType hm nm [_] | hm == ModuleName.generate && nm == Name.io ->
+    case tipe of
+      Can.TType typeRegion hm nm [_] | hm == ModuleName.generate && nm == Name.io ->
         let
           generator =
-            Opt.Generator (Opt.Global home name) region
+            Opt.Generator (Opt.Global home name) typeRegion bodyRegion
         in
         Result.ok (addGenerator home name body generator graph)
 
