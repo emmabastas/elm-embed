@@ -272,14 +272,14 @@ emitGenerated (Generate.Objects _ locals) generated =
               in
               do  Dir.createDirectoryIfMissing True outputFolder
                   inputContents <- TextIO.readFile inputPath
-                  let outputContents = emitModule graph (generated ! (Name.toChars moduleName)) inputContents
+                  let outputContents = emitModule (Name.fromChars outputModule) graph (generated ! (Name.toChars moduleName)) inputContents
                   TextIO.writeFile outputPath outputContents
           )
           (Map.toList locals)
 
 
-emitModule :: Opt.LocalGraph -> Map.Map String String -> Text -> Text
-emitModule (Opt.LocalGraph generators _ _ moduleNameInSrc) generated text =
+emitModule :: Name.Name -> Opt.LocalGraph -> Map.Map String String -> Text -> Text
+emitModule moduleName (Opt.LocalGraph generators _ _ moduleNameInSrc) generated text =
   let startRow (Opt.Generator _ (A.Region (A.Position r _) _)) = r
       sorted = List.sortOn startRow generators
       replacements =
@@ -289,8 +289,9 @@ emitModule (Opt.LocalGraph generators _ _ moduleNameInSrc) generated text =
             (inSrc, Text.pack result)
           )
           sorted
+      replacements_ = (moduleNameInSrc, Text.pack (Name.toChars moduleName)) : replacements
   in
-  Text.unlines $ replace 1 replacements (Text.lines text)
+  Text.unlines $ replace 1 replacements_ (Text.lines text)
 
 
 replace :: Word16 -> [(A.Region, Text)] -> [Text] -> [Text]
@@ -303,7 +304,7 @@ replace currentRow replacements lines =
       let (linesBefore, a) = splitAt (fromIntegral $ sr - currentRow) lines
           charsBefore = Text.take (fromIntegral sc - 1) $ head a
           (b : linesAfter) = drop (fromIntegral $ er - sr) a
-          charsAfter = Text.drop (fromIntegral $ ec) b
+          charsAfter = Text.drop (fromIntegral $ ec - 1) b
       in
       linesBefore ++ [ charsBefore <> replacement <> charsAfter ]
       ++ replace (er + 1) xs linesAfter
