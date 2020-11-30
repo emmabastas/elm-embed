@@ -18,11 +18,13 @@ import qualified Data.Text.IO as TextIO
 import Data.Aeson (FromJSON, (.:))
 import qualified Data.Aeson as JSON
 import qualified Data.Maybe as Maybe
-import Data.Map ((!))
+import Data.Map (Map, (!))
 import qualified Data.Map as Map
 import qualified Data.List as List
 import qualified Data.NonEmptyList as NE
+import Data.Name (Name)
 import qualified Data.Name as Name
+import qualified Data.Utf8
 import Data.Monoid ((<>))
 import Control.Applicative ((<|>))
 import Control.Exception (try)
@@ -224,7 +226,7 @@ runGenerators interpreter builder =
 
 
 data Generated
-  = Success (Map.Map String (Map.Map String String))
+  = Success (Map String (Map String String))
   | Failure [TaskFailure]
 
 
@@ -256,7 +258,7 @@ instance FromJSON TaskFailure where
 -- EMIT GENERATED
 
 
-emitGenerated :: Generate.Objects -> Map.Map String (Map.Map String String) -> Task ()
+emitGenerated :: Generate.Objects -> Map String (Map String String) -> Task ()
 emitGenerated (Generate.Objects _ locals) generated =
   Task.io $
     do
@@ -272,14 +274,14 @@ emitGenerated (Generate.Objects _ locals) generated =
               in
               do  Dir.createDirectoryIfMissing True outputFolder
                   inputContents <- TextIO.readFile inputPath
-                  let outputContents = emitModule (Name.fromChars outputModule) graph (generated ! (Name.toChars moduleName)) inputContents
+                  let outputContents = emitModule graph outputModule (generated ! (Name.toChars moduleName)) inputContents
                   TextIO.writeFile outputPath outputContents
           )
           (Map.toList locals)
 
 
-emitModule :: Name.Name -> Opt.LocalGraph -> Map.Map String String -> Text -> Text
-emitModule moduleName (Opt.LocalGraph generators _ _ moduleNameInSrc) generated text =
+emitModule :: Opt.LocalGraph -> String -> Map String String -> Text -> Text
+emitModule (Opt.LocalGraph generators _ _ moduleNameInSrc) moduleName generated text =
   let startRow (Opt.Generator _ (A.Region (A.Position r _) _)) = r
       sorted = List.sortOn startRow generators
       replacements =
@@ -289,7 +291,7 @@ emitModule moduleName (Opt.LocalGraph generators _ _ moduleNameInSrc) generated 
             (inSrc, Text.pack result)
           )
           sorted
-      replacements_ = (moduleNameInSrc, Text.pack (Name.toChars moduleName)) : replacements
+      replacements_ = (moduleNameInSrc, Text.pack moduleName) : replacements
   in
   Text.unlines $ replace 1 replacements_ (Text.lines text)
 
