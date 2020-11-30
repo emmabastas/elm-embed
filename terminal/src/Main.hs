@@ -16,7 +16,6 @@ import Terminal
 import Terminal.Helpers
 
 import qualified Bump
-import qualified Develop
 import qualified Diff
 import qualified Init
 import qualified Install
@@ -34,7 +33,6 @@ main =
   Terminal.app intro outro
     [ repl
     , init
-    , reactor
     , make
     , install
     , bump
@@ -126,45 +124,6 @@ interpreter =
     , _parser = Just
     , _suggest = \_ -> return []
     , _examples = \_ -> return ["node","nodejs"]
-    }
-
-
-
--- REACTOR
-
-
-reactor :: Terminal.Command
-reactor =
-  let
-    summary =
-      "Compile code with a click. It opens a file viewer in your browser, and\
-      \ when you click on an Elm file, it compiles and you see the result."
-
-    details =
-      "The `reactor` command starts a local server on your computer:"
-
-    example =
-      reflow
-        "After running that command, you would have a server at <http://localhost:8000>\
-        \ that helps with development. It shows your files like a file viewer. If you\
-        \ click on an Elm file, it will compile it for you! And you can just press\
-        \ the refresh button in the browser to recompile things."
-
-    reactorFlags =
-      flags Develop.Flags
-        |-- flag "port" port_ "The port of the server (default: 8000)"
-  in
-  Terminal.Command "reactor" (Common summary) details example noArgs reactorFlags Develop.run
-
-
-port_ :: Parser Int
-port_ =
-  Parser
-    { _singular = "port"
-    , _plural = "ports"
-    , _parser = readMaybe
-    , _suggest = \_ -> return []
-    , _examples = \_ -> return ["3000","8000"]
     }
 
 
