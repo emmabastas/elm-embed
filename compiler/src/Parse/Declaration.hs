@@ -96,9 +96,10 @@ chompDefArgsAndBody maybeDocs start name tipe revArgs =
           Space.chompAndCheckIndent E.DeclDefSpace E.DeclDefIndentEquals
           chompDefArgsAndBody maybeDocs start name tipe (arg : revArgs)
     , do  word1 0x3D {-=-} E.DeclDefEquals
+          start <- getPosition
           Space.chompAndCheckIndent E.DeclDefSpace E.DeclDefIndentBody
           (body, end) <- specialize E.DeclDefBody Expr.expression
-          let value = Src.Value name (reverse revArgs) body tipe
+          let value = Src.Value name (reverse revArgs) body tipe (A.Region start end)
           let avalue = A.at start end value
           return (Value maybeDocs avalue, end)
     ]

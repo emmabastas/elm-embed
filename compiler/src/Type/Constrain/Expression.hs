@@ -529,7 +529,7 @@ constrainDestruct rtv region pattern expr bodyCon =
 constrainDef :: RTV -> Can.Def -> Constraint -> IO Constraint
 constrainDef rtv def bodyCon =
   case def of
-    Can.Def (A.At region name) args expr ->
+    Can.Def (A.At region name) args expr _ ->
       do  (Args vars tipe resultType (Pattern.State headers pvars revCons)) <-
             constrainArgs args
 
@@ -552,7 +552,7 @@ constrainDef rtv def bodyCon =
               , _bodyCon = bodyCon
               }
 
-    Can.TypedDef (A.At region name) freeVars typedArgs expr srcResultType ->
+    Can.TypedDef (A.At region name) freeVars typedArgs expr srcResultType _ ->
       do  let newNames = Map.difference freeVars rtv
           newRigids <- Map.traverseWithKey (\n _ -> nameToRigid n) newNames
           let newRtv = Map.union rtv (Map.map VarN newRigids)
@@ -617,7 +617,7 @@ recDefsHelp rtv defs bodyCon rigidInfo flexInfo =
 
     def : otherDefs ->
       case def of
-        Can.Def (A.At region name) args expr ->
+        Can.Def (A.At region name) args expr _ ->
           do  let (Info flexVars flexCons flexHeaders) = flexInfo
 
               (Args newFlexVars tipe resultType (Pattern.State headers pvars revCons)) <-
@@ -642,7 +642,7 @@ recDefsHelp rtv defs bodyCon rigidInfo flexInfo =
                   , _headers = Map.insert name (A.At region tipe) flexHeaders
                   }
 
-        Can.TypedDef (A.At region name) freeVars typedArgs expr srcResultType ->
+        Can.TypedDef (A.At region name) freeVars typedArgs expr srcResultType _ ->
           do  let newNames = Map.difference freeVars rtv
               newRigids <- Map.traverseWithKey (\n _ -> nameToRigid n) newNames
               let newRtv = Map.union rtv (Map.map VarN newRigids)

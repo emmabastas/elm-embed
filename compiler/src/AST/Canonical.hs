@@ -120,8 +120,8 @@ data FieldUpdate =
 
 
 data Def
-  = Def (A.Located Name) [Pattern] Expr
-  | TypedDef (A.Located Name) FreeVars [(Pattern, Type)] Expr Type
+  = Def (A.Located Name) [Pattern] Expr A.Region
+  | TypedDef (A.Located Name) FreeVars [(Pattern, Type)] Expr Type A.Region
 
 
 

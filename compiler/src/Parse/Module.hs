@@ -174,7 +174,7 @@ getComments decls comments =
 
     decl:otherDecls ->
       case decl of
-        Decl.Value c (A.At _ (Src.Value n _ _ _)) -> getComments otherDecls (addComment c n comments)
+        Decl.Value c (A.At _ (Src.Value n _ _ _ _)) -> getComments otherDecls (addComment c n comments)
         Decl.Union c (A.At _ (Src.Union n _ _  )) -> getComments otherDecls (addComment c n comments)
         Decl.Alias c (A.At _ (Src.Alias n _ _  )) -> getComments otherDecls (addComment c n comments)
         Decl.Port  c         (Src.Port  n _    )  -> getComments otherDecls (addComment c n comments)

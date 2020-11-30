@@ -120,8 +120,8 @@ detectBadCycles scc =
 extractDefName :: Can.Def -> A.Located Name.Name
 extractDefName def =
   case def of
-    Can.Def name _ _ -> name
-    Can.TypedDef name _ _ _ _ -> name
+    Can.Def name _ _ _ -> name
+    Can.TypedDef name _ _ _ _ _ -> name
 
 
 
@@ -143,7 +143,7 @@ type NodeTwo =
 
 
 toNodeOne :: Env.Env -> A.Located Src.Value -> Result i [W.Warning] NodeOne
-toNodeOne env (A.At _ (Src.Value aname@(A.At _ name) srcArgs body maybeType)) =
+toNodeOne env (A.At _ (Src.Value aname@(A.At _ name) srcArgs body maybeType bodyRegion)) =
   case maybeType of
     Nothing ->
       do  (args, argBindings) <-
@@ -156,7 +156,7 @@ toNodeOne env (A.At _ (Src.Value aname@(A.At _ name) srcArgs body maybeType)) =
           (cbody, freeLocals) <-
             Expr.verifyBindings W.Pattern argBindings (Expr.canonicalize newEnv body)
 
-          let def = Can.Def aname args cbody
+          let def = Can.Def aname args cbody bodyRegion
           return
             ( toNodeTwo name srcArgs def freeLocals
             , name
@@ -176,7 +176,7 @@ toNodeOne env (A.At _ (Src.Value aname@(A.At _ name) srcArgs body maybeType)) =
           (cbody, freeLocals) <-
             Expr.verifyBindings W.Pattern argBindings (Expr.canonicalize newEnv body)
 
-          let def = Can.TypedDef aname freeVars args cbody resultType
+          let def = Can.TypedDef aname freeVars args cbody resultType bodyRegion
           return
             ( toNodeTwo name srcArgs def freeLocals
             , name
@@ -226,7 +226,7 @@ canonicalizeExports values unions aliases binops effects (A.At region exposing) 
 
 
 valueToName :: A.Located Src.Value -> ( Name.Name, () )
-valueToName (A.At _ (Src.Value (A.At _ name) _ _ _)) =
+valueToName (A.At _ (Src.Value (A.At _ name) _ _ _ _)) =
   ( name, () )
 
 

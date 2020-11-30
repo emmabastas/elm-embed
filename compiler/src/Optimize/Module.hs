@@ -216,18 +216,18 @@ findMain defs =
 
     def:rest ->
       case def of
-        Can.Def (A.At region name) _ _ ->
+        Can.Def (A.At region name) _ _ _ ->
           if name == Name._main then Just region else findMain rest
 
-        Can.TypedDef (A.At region name) _ _ _ _ ->
+        Can.TypedDef (A.At region name) _ _ _ _ _ ->
           if name == Name._main then Just region else findMain rest
 
 
 defToName :: Can.Def -> Name.Name
 defToName def =
   case def of
-    Can.Def (A.At _ name) _ _          -> name
-    Can.TypedDef (A.At _ name) _ _ _ _ -> name
+    Can.Def (A.At _ name) _ _ _          -> name
+    Can.TypedDef (A.At _ name) _ _ _ _ _ -> name
 
 
 
@@ -237,22 +237,17 @@ defToName def =
 addDef :: ModuleName.Canonical -> Annotations -> Can.Def -> Opt.LocalGraph -> Result i [W.Warning] Opt.LocalGraph
 addDef home annotations def graph =
   case def of
-    Can.Def (A.At region name) args body ->
+    Can.Def (A.At region name) args body bodyRegion ->
       do  let (Can.Forall _ tipe) = annotations ! name
-          let (A.Region (A.Position startRow _) _) = region
-          let (A.Region _ (A.Position endRow _)) = A.toRegion body
           Result.warn $ W.MissingTypeAnnotation region name tipe
-          addDefHelp annotations home name (startRow, endRow) args body graph
+          addDefHelp annotations home name args body bodyRegion graph
 
-    Can.TypedDef (A.At region name) _ typedArgs body _ ->
-      let (A.Region (A.Position startRow _) _) = region
-          (A.Region _ (A.Position endRow _)) = A.toRegion body
-      in
-      addDefHelp annotations home name (startRow, endRow) (map fst typedArgs) body graph
+    Can.TypedDef (A.At region name) _ typedArgs body _ bodyRegion ->
+      addDefHelp annotations home name (map fst typedArgs) body bodyRegion graph
 
 
-addDefHelp :: Annotations -> ModuleName.Canonical -> Name.Name -> (Word16, Word16) -> [Can.Pattern] -> Can.Expr -> Opt.LocalGraph -> Result i w Opt.LocalGraph
-addDefHelp annotations home name defRegion args body graph =
+addDefHelp :: Annotations -> ModuleName.Canonical -> Name.Name -> [Can.Pattern] -> Can.Expr -> A.Region -> Opt.LocalGraph -> Result i w Opt.LocalGraph
+addDefHelp annotations home name args body region graph =
   let
     (Can.Forall _ tipe) = annotations ! name
   in
@@ -260,7 +255,7 @@ addDefHelp annotations home name defRegion args body graph =
       Can.TType hm nm [_] | hm == ModuleName.generate && nm == Name.io ->
         let
           generator =
-            Opt.Generator (Opt.Global home name) defRegion
+            Opt.Generator (Opt.Global home name) region
         in
         Result.ok (addGenerator home name body generator graph)
 
@@ -324,24 +319,24 @@ addRecDefs home defs (Opt.LocalGraph main nodes fieldCounts moduleName) =
 toName :: Can.Def -> Name.Name
 toName def =
   case def of
-    Can.Def      (A.At _ name) _ _     -> name
-    Can.TypedDef (A.At _ name) _ _ _ _ -> name
+    Can.Def      (A.At _ name) _ _ _     -> name
+    Can.TypedDef (A.At _ name) _ _ _ _ _ -> name
 
 
 addValueName :: Can.Def -> Set.Set Name.Name -> Set.Set Name.Name
 addValueName def names =
   case def of
-    Can.Def      (A.At _ name)   args _   -> if null args then Set.insert name names else names
-    Can.TypedDef (A.At _ name) _ args _ _ -> if null args then Set.insert name names else names
+    Can.Def      (A.At _ name)   args _   _ -> if null args then Set.insert name names else names
+    Can.TypedDef (A.At _ name) _ args _ _ _ -> if null args then Set.insert name names else names
 
 
 addLink :: ModuleName.Canonical -> Opt.Node -> Can.Def -> Map.Map Opt.Global Opt.Node -> Map.Map Opt.Global Opt.Node
 addLink home link def links =
   case def of
-    Can.Def (A.At _ name) _ _ ->
+    Can.Def (A.At _ name) _ _ _->
       Map.insert (Opt.Global home name) link links
 
-    Can.TypedDef (A.At _ name) _ _ _ _ ->
+    Can.TypedDef (A.At _ name) _ _ _ _ _ ->
       Map.insert (Opt.Global home name) link links
 
 
@@ -352,10 +347,10 @@ addLink home link def links =
 addRecDef :: Set.Set Name.Name -> State -> Can.Def -> Names.Tracker State
 addRecDef cycle state def =
   case def of
-    Can.Def (A.At _ name) args body ->
+    Can.Def (A.At _ name) args body _ ->
       addRecDefHelp cycle state name args body
 
-    Can.TypedDef (A.At _ name) _ args body _ ->
+    Can.TypedDef (A.At _ name) _ args body _ _ ->
       addRecDefHelp cycle state name (map fst args) body
 
 

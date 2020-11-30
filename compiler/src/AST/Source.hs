@@ -161,7 +161,7 @@ data Import =
     }
 
 
-data Value = Value (A.Located Name) [Pattern] Expr (Maybe Type)
+data Value = Value (A.Located Name) [Pattern] Expr (Maybe Type) A.Region
 data Union = Union (A.Located Name) [A.Located Name] [(A.Located Name, [Type])]
 data Alias = Alias (A.Located Name) [A.Located Name] Type
 data Infix = Infix Name Binop.Associativity Binop.Precedence Name

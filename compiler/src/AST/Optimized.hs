@@ -145,7 +145,7 @@ data LocalGraph =
 data Generator
   = Generator
     { name :: Global
-    , bodySrc :: (Word16, Word16)
+    , body :: A.Region
     }
 
 

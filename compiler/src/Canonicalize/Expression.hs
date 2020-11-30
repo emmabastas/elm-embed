@@ -401,7 +401,7 @@ addDefNodes env nodes (A.At _ def) =
               (cbody, freeLocals) <-
                 verifyBindings W.Pattern argBindings (canonicalize newEnv body)
 
-              let cdef = Can.Def aname args cbody
+              let cdef = Can.Def aname args cbody A.one
               let node = ( Define cdef, name, Map.keys freeLocals )
               logLetLocals args freeLocals (node:nodes)
 
@@ -417,7 +417,7 @@ addDefNodes env nodes (A.At _ def) =
               (cbody, freeLocals) <-
                 verifyBindings W.Pattern argBindings (canonicalize newEnv body)
 
-              let cdef = Can.TypedDef aname freeVars args cbody resultType
+              let cdef = Can.TypedDef aname freeVars args cbody resultType A.one
               let node = ( Define cdef, name, Map.keys freeLocals )
               logLetLocals args freeLocals (node:nodes)
 
@@ -551,13 +551,13 @@ checkCycle bindings defs =
 
     binding : otherBindings ->
       case binding of
-        Define def@(Can.Def name args _) ->
+        Define def@(Can.Def name args _ _) ->
           if null args then
             Result.throw (Error.RecursiveLet name (toNames otherBindings defs))
           else
             checkCycle otherBindings (def:defs)
 
-        Define def@(Can.TypedDef name _ args _ _) ->
+        Define def@(Can.TypedDef name _ args _ _ _) ->
           if null args then
             Result.throw (Error.RecursiveLet name (toNames otherBindings defs))
           else
@@ -588,10 +588,10 @@ toNames bindings revDefs =
 getDefName :: Can.Def -> Name.Name
 getDefName def =
   case def of
-    Can.Def (A.At _ name) _ _ ->
+    Can.Def (A.At _ name) _ _ _ ->
       name
 
-    Can.TypedDef (A.At _ name) _ _ _ _ ->
+    Can.TypedDef (A.At _ name) _ _ _ _ _ ->
       name
 
 

@@ -23,6 +23,7 @@ import qualified Data.Map as Map
 import qualified Data.List as List
 import qualified Data.NonEmptyList as NE
 import qualified Data.Name as Name
+import Data.Monoid ((<>))
 import Control.Applicative ((<|>))
 import Control.Exception (try)
 import qualified Control.Monad
@@ -46,7 +47,6 @@ import qualified Reporting
 import qualified Reporting.Exit as Exit
 import qualified Reporting.Task as Task
 import qualified Reporting.Annotation as A
---import qualified Reporting.Anotation as A
 import qualified Stuff
 import Terminal (Parser(..))
 
@@ -280,7 +280,7 @@ emitGenerated (Generate.Objects _ locals) generated =
 
 emitModule :: Opt.LocalGraph -> Map.Map String String -> Text -> Text
 emitModule (Opt.LocalGraph generators _ _ moduleNameInSrc) generated text =
-  let startRow (Opt.Generator _ (r, _)) = r
+  let startRow (Opt.Generator _ (A.Region (A.Position r _) _)) = r
       sorted = List.sortOn startRow generators
       replacements =
         map
@@ -293,18 +293,20 @@ emitModule (Opt.LocalGraph generators _ _ moduleNameInSrc) generated text =
   Text.unlines $ replace 1 replacements (Text.lines text)
 
 
-replace :: Word16 -> [((Word16, Word16), Text)] -> [Text] -> [Text]
+replace :: Word16 -> [(A.Region, Text)] -> [Text] -> [Text]
 replace currentRow replacements lines =
   case replacements of
     [] ->
       lines
 
-    ((startRow, endRow), s) : xs ->
-      let (before, y) = splitAt (fromIntegral $ startRow - currentRow) lines
-          after = drop (fromIntegral $ endRow - startRow + 1) y
+    (A.Region (A.Position sr sc) (A.Position er ec), replacement) : xs ->
+      let (linesBefore, a) = splitAt (fromIntegral $ sr - currentRow) lines
+          charsBefore = Text.take (fromIntegral sc - 1) $ head a
+          (b : linesAfter) = drop (fromIntegral $ er - sr) a
+          charsAfter = Text.drop (fromIntegral $ ec) b
       in
-      before ++ s:replace (endRow+1) xs after
-
+      linesBefore ++ [ charsBefore <> replacement <> charsAfter ]
+      ++ replace (er + 1) xs linesAfter
 
 
 -- INTERPRET

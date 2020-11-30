@@ -334,7 +334,7 @@ crawlFile env@(Env _ root projectType _ buildID _ _) mvar docsNeed expectedName 
 
 
 isMain :: A.Located Src.Value -> Bool
-isMain (A.At _ (Src.Value (A.At _ name) _ _ _)) =
+isMain (A.At _ (Src.Value (A.At _ name) _ _ _ _)) =
   name == Name._main
 
 
