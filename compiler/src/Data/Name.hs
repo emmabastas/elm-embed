@@ -32,7 +32,6 @@ module Data.Name
   , utils, negate, true, false, value
   , node, program, _main, _Main, dollar, identity
   , replModule, replValueToPrint
-  , io
   )
   where
 
@@ -609,8 +608,3 @@ replModule = fromChars "Elm_Repl"
 {-# NOINLINE replValueToPrint #-}
 replValueToPrint :: Name
 replValueToPrint = fromChars "repl_input_value_"
-
-
-{-# NOINLINE io #-}
-io :: Name
-io = fromChars "IO"

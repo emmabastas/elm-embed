@@ -21,8 +21,8 @@ errors = []
 
 for (let moduleName in generators) {
   for (let declarationName in generators[moduleName]) {
-    let io = generators[moduleName][declarationName]
-    let result = performIo(io)
+    let task = generators[moduleName][declarationName]
+    let result = performTask(task)
     if (result.$ == "Done")
       successes.push({ moduleName, declarationName, v: result.a })
     else
@@ -56,17 +56,17 @@ console.log(JSON.stringify({
 process.exit(0)
 
 
-function performIo(io) {
-  if (io.$ === "Fail")
-    return io
+function performTask(task) {
+  if (task.$ === "Fail")
+    return task
 
-  if (io.$ === "Done")
-    return io
+  if (task.$ === "Done")
+    return task
 
-  if (io.$ === "IO") {
-    let command = io.a
-    let args = toArray(io.b)
-    let decoder = io.c
+  if (task.$ === "Task") {
+    let command = task.a
+    let args = toArray(task.b)
+    let decoder = task.c
 
     let commandResult = performCommand(command, args)
     let decodeResult = _Json_runHelp(decoder, commandResult)
@@ -74,10 +74,10 @@ function performIo(io) {
     if (decodeResult.$ === "Err")
       throw new Error("Decode error")
 
-    return performIo(decodeResult.a)
+    return performTask(decodeResult.a)
   }
 
-  throw new Error("Invalid IO Variant: `" + io.$ + "`")
+  throw new Error("Invalid Task Variant: `" + task.$ + "`")
 }
 
 function performCommand(command, args) {

@@ -1777,13 +1777,13 @@ makeToReport make =
                 "Try adding a generator value to you file, if you already have one then make sure\
                 \ it's exposed"
             , D.toSimpleNote $
-                "A generator value is anything with the type `Generate.IO`"
+                "A generator value is anything with the type `Generate.Task`"
             , D.indent 4 $ D.vcat
               [ D.fillSep [ "module", D.fromChars (ModuleName.toChars m), "exposing(" <> (D.green "myValue") <> ")" ]
               , ""
               , D.fillSep ["import", D.cyan "Generate"]
               , ""
-              , D.fillSep [D.green "myValue", ":", D.cyan "Generate" <> D.dullyellow ".IO", "String"]
+              , D.fillSep [D.green "myValue", ":", D.cyan "Generate" <> D.dullyellow ".Task", "String"]
               , D.fillSep [D.green "myValue","="]
               , D.indent 2 $ D.fillSep [D.cyan "Generate" <> ".succeed \"Hello!\""]
               ]
@@ -1800,13 +1800,13 @@ makeToReport make =
               "Try adding a generator value to you file, if you already have one then make sure\
                 \ it's exposed"
             , D.toSimpleNote $
-                "A generator value is anything with the type `Generate.IO`"
+                "A generator value is anything with the type `Generate.Task`"
             , D.indent 4 $ D.vcat
               [ D.fillSep [ "module", D.fromChars (ModuleName.toChars m), "exposing(" <> (D.green "myValue") <> ")" ]
               , ""
               , D.fillSep ["import", D.cyan "Generate"]
               , ""
-              , D.fillSep [D.green "myValue", ":", D.cyan "Generate" <> D.dullyellow ".IO", "String"]
+              , D.fillSep [D.green "myValue", ":", D.cyan "Generate" <> D.dullyellow ".Task", "String"]
               , D.fillSep [D.green "myValue","="]
               , D.indent 2 $ D.fillSep [D.cyan "Generate" <> ".succeed \"Hello!\""]
               ]
