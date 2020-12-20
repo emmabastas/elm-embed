@@ -5,6 +5,7 @@ module Elm.Version
   , one
   , max
   , compiler
+  , elmGenerate
   , bumpPatch
   , bumpMinor
   , bumpMajor
@@ -57,6 +58,11 @@ max =
 
 compiler :: Version
 compiler =
+  Version 0 19 1
+
+
+elmGenerate :: Version
+elmGenerate =
   case map fromIntegral (Version.versionBranch Paths_elm_generate.version) of
     major : minor : patch : _ ->
       Version major minor patch

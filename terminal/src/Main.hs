@@ -46,8 +46,9 @@ intro =
   P.vcat
     [ P.fillSep
         ["Hi,","thank","you","for","trying","out"
-        ,P.green "Elm"
-        ,P.green (P.text (V.toChars V.compiler)) <> "."
+        ,P.green "elm-generate"
+        ,P.green (P.text (V.toChars V.elmGenerate))
+        ,"(compatible with Elm " <> (P.text (V.toChars V.compiler)) <> ")."
         ,"I hope you like it!"
         ]
     , ""
