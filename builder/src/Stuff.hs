@@ -166,7 +166,7 @@ getReplCache =
 getCacheDir :: FilePath -> IO FilePath
 getCacheDir projectName =
   do  home <- getElmHome
-      let root = home </> compilerVersion </> projectName
+      let root = home </> "elm-generate" </> compilerVersion </> projectName
       Dir.createDirectoryIfMissing True root
       return root
 
