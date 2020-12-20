@@ -1,31 +1,31 @@
 
-Name: elm
-Version: 0.19.1
+Name: elm-generate
+Version: 0.1.0
 
 Synopsis:
-    The `elm` command line interface.
+    The `elm-generate` command line interface.
 
 Description:
-    This includes commands like `elm make`, `elm repl`, and many others
-    for helping make Elm developers happy and productive.
+    Run Elm code as a build step, read environment variables, files on disk
+    and make http request at buildtime.
 
-Homepage: https://elm-lang.org
+Homepage: https://github.com/emmabastas/elm-generate
 
 License: BSD3
 License-file: LICENSE
 
-Author:     Evan Czaplicki
-Maintainer: info@elm-lang.org
-Copyright:  Copyright (c) 2011-present, Evan Czaplicki
+Author:     Emma Bastås
+Maintainer: emma.bastas@protonmail.com
+Copyright:  See https://github.com/emmabastas/elm-generate/blob/master/LICENSE
 
-Category: Compiler, Language
+Category: Tooling
 
 Cabal-version: >=1.9
 Build-type: Simple
 
 source-repository head
     type:     git
-    location: git://github.com/elm/compiler.git
+    location: git://github.com/emmabastas/elm-generate.git
 
 
 Flag dev {
@@ -34,7 +34,7 @@ Flag dev {
 }
 
 
-Executable elm
+Executable elm-generate
     if flag(dev)
         -- ghc-options: -O0 -Wall -Werror
         ghc-options: -O0 -Wall
@@ -195,7 +195,7 @@ Executable elm
         Type.Type
         Type.Unify
         Type.UnionFind
-        Paths_elm
+        Paths_elm_generate
 
     Build-depends:
         aeson >= 1.5.4 && < 1.6,
