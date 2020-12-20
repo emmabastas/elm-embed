@@ -326,16 +326,11 @@ crawlFile env@(Env _ root projectType _ buildID _ _) mvar docsNeed expectedName 
               if expectedName == actualName then
                 let
                   deps = map Src.getImportName imports
-                  local = Details.Local path time deps (any isMain values) lastChange buildID
+                  local = Details.Local path time deps True lastChange buildID
                 in
                 crawlDeps env mvar deps (SChanged local source modul docsNeed)
               else
                 return $ SBadSyntax path time source (Syntax.ModuleNameMismatch expectedName name)
-
-
-isMain :: A.Located Src.Value -> Bool
-isMain (A.At _ (Src.Value (A.At _ name) _ _ _ _)) =
-  name == Name._main
 
 
 
@@ -1119,7 +1114,7 @@ crawlRoot env@(Env _ _ projectType _ buildID _ _) mvar root =
           case Parse.fromByteString projectType source of
             Right modul@(Src.Module _ _ _ imports values _ _ _ _) ->
               do  let deps = map Src.getImportName imports
-                  let local = Details.Local path time deps (any isMain values) buildID buildID
+                  let local = Details.Local path time deps True buildID buildID
                   crawlDeps env mvar deps (SOutsideOk local source modul)
 
             Left syntaxError ->
