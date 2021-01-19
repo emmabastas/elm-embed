@@ -91,6 +91,7 @@ Executable elm-generate
         -- Elm things
         Elm.Outline
         Elm.Details
+        Elm.ElmGenerateScripts
         --
         Elm.Compiler.Imports
         Elm.Compiler.Type

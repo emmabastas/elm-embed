@@ -86,7 +86,8 @@ toJson report =
 
 
 data Init
-  = InitNoSolution [Pkg.Name]
+  = InitNoOutline
+  | InitNoSolution [Pkg.Name]
   | InitNoOfflineSolution [Pkg.Name]
   | InitSolverProblem Solver
   | InitAlreadyExists
@@ -96,6 +97,13 @@ data Init
 initToReport :: Init -> Help.Report
 initToReport exit =
   case exit of
+    InitNoOutline ->
+      Help.report "NO elm.json FILE" Nothing
+        "Before initializing elm-generate you need to initialize an Elm project. Try running:"
+        [ D.indent 4 $ D.green $ "elm init"
+          , D.reflow "After that you can run" <> D.green " elm-generate init"
+        ]
+
     InitNoSolution pkgs ->
       Help.report "NO SOLUTION" Nothing
         "I tried to create an elm.json with the following direct dependencies:"

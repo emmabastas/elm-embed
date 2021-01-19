@@ -15,6 +15,7 @@ import qualified Elm.Constraint as Con
 import qualified Elm.Outline as Outline
 import qualified Elm.Package as Pkg
 import qualified Elm.Version as V
+import qualified Elm.ElmGenerateScripts
 import qualified Reporting
 import qualified Reporting.Doc as D
 import qualified Reporting.Exit as Exit
@@ -29,14 +30,8 @@ run () () =
   Reporting.attempt Exit.initToReport $
   do  exists <- Dir.doesFileExist "elm.json"
       if exists
-        then return (Left Exit.InitAlreadyExists)
-        else
-          do  approved <- Reporting.ask question
-              if approved
-                then init
-                else
-                  do  putStrLn "Okay, I did not make any changes!"
-                      return (Right ())
+        then init
+        else return (Left Exit.InitNoOutline)
 
 
 question :: D.Doc
@@ -88,10 +83,9 @@ init =
                     directs = Map.intersection solution defaults
                     indirects = Map.difference solution defaults
                   in
-                  do  Dir.createDirectoryIfMissing True "src"
-                      Outline.write "." $ Outline.App $
-                        Outline.AppOutline V.compiler (NE.List (Outline.RelativeSrcDir "src") []) directs indirects Map.empty Map.empty
-                      putStrLn "Okay, I created it. Now read that link!"
+                  do  Dir.createDirectoryIfMissing True "elm-generate-scripts"
+                      Elm.ElmGenerateScripts.writeModules "elm-generate-scripts"
+                      putStrLn "Initialized!"
                       return (Right ())
 
 
