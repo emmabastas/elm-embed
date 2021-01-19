@@ -1608,10 +1608,8 @@ makeToReport make =
   case make of
     MakeNoOutline ->
       Help.report "NO elm.json FILE" Nothing
-        "It looks like you are starting a new Elm project. Very exciting! Try running:"
+        "Are you sure you're in the right place? To start a new Elm project run:"
         [ D.indent 4 $ D.green $ "elm init"
-        , D.reflow $
-            "It will help you get set up. It is really simple!"
         ]
 
     MakeCannotOptimizeAndDebug ->
