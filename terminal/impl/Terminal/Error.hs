@@ -112,7 +112,7 @@ exitWithHelp maybeCommand details example (Args args) flags =
               []
 
             docs@(_:_) ->
-              [ "You can customize this command with the following flags:"
+              [ "Flags:"
               , P.indent 4 $ stack docs
               ]
 
@@ -191,11 +191,8 @@ exitWithOverview intro outro commands =
   do  exeName <- getExeName
       exitSuccess
         [ intro
-        , "The most common commands are:"
+        , "Commands:"
         , P.indent 4 $ stack $ Maybe.mapMaybe (toSummary exeName) commands
-        , "There are a bunch of other commands as well though. Here is a full list:"
-        , P.indent 4 $ P.dullcyan $ toCommandList exeName commands
-        , "Adding the --help flag gives a bunch of additional details about each one."
         , outro
         ]
 

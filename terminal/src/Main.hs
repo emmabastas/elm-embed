@@ -33,28 +33,13 @@ main =
 
 intro :: P.Doc
 intro =
-  P.vcat
-    [ P.fillSep
-        ["Hi,","thank","you","for","trying","out"
-        ,P.green "elm-generate"
-        ,P.green (P.text (V.toChars V.elmGenerate))
-        ,"(compatible with Elm " <> (P.text (V.toChars V.compiler)) <> ")."
-        ,"I hope you like it!"
-        ]
-    , ""
-    , P.black "-------------------------------------------------------------------------------"
-    , P.black "I highly recommend working through <https://guide.elm-lang.org> to get started."
-    , P.black "It teaches many important concepts, including how to use `elm` in the terminal."
-    , P.black "-------------------------------------------------------------------------------"
-    ]
+  P.fillSep ["elm-generate", P.text (V.toChars V.elmGenerate)]
 
 
 outro :: P.Doc
 outro =
   P.fillSep $ map P.text $ words $
-    "Be sure to ask on the Elm slack if you run into trouble! Folks are friendly and\
-    \ happy to help out. They hang out there because it is fun, so be kind to get the\
-    \ best results!"
+    "To get a more detailed description of each command, add the --help flag."
 
 
 
@@ -65,16 +50,15 @@ init :: Terminal.Command
 init =
   let
     summary =
-      "Start an Elm project. It creates a starter elm.json file and\
-      \ provides a link explaining what to do from there."
+      "Initialize elm-generate for this project"
 
     details =
-      "The `init` command helps start Elm projects:"
+      "Initialize elm-generate for this project"
 
     example =
       reflow
-        "It will ask permission to create an elm.json file, the one thing common\
-        \ to all Elm projects. It also provides a link explaining what to do from there."
+        "Creates an `elm-generate-scripts` folder with modules consumed by your\
+        \ generators, also adds this folder to `source-directories` in `elm.json`."
   in
   Terminal.Command "init" (Common summary) details example noArgs noFlags Init.run
 
@@ -87,10 +71,10 @@ make :: Terminal.Command
 make =
   let
     summary =
-      "The `make` command generates Elm code from code inside `elm-generates-scripts`:"
+      "Generate Elm code from the generators in `elm-generate-scripts`"
 
     details =
-      "The `make` command generates Elm code from code inside `elm-generates-scripts`:"
+      "Generate Elm code from the generators in `elm-generate-scripts`"
 
     example =
       stack []
