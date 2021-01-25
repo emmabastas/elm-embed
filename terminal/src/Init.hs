@@ -19,6 +19,7 @@ import qualified Elm.ElmGenerateScripts
 import qualified Reporting
 import qualified Reporting.Doc as D
 import qualified Reporting.Exit as Exit
+import qualified Stuff
 
 
 
@@ -28,10 +29,14 @@ import qualified Reporting.Exit as Exit
 run :: () -> () -> IO ()
 run () () =
   Reporting.attempt Exit.initToReport $
-  do  exists <- Dir.doesFileExist "elm.json"
-      if exists
-        then init
-        else return (Left Exit.InitNoOutline)
+    do  maybeRoot <- Stuff.findRoot
+        case maybeRoot of
+          Nothing ->
+            return (Left Exit.InitNoOutline)
+
+          Just root ->
+            init root
+
 
 
 question :: D.Doc
@@ -58,36 +63,32 @@ question =
 -- INIT
 
 
-init :: IO (Either Exit.Init ())
-init =
-  do  eitherEnv <- Solver.initEnv
-      case eitherEnv of
-        Left problem ->
-          return (Left (Exit.InitRegistryProblem problem))
+init :: FilePath -> IO (Either Exit.Init ())
+init root =
+  do  outline <- Outline.read root
+      case outline of
+        Left outlineProblem ->
+          return (Left (Exit.InitOutlineProblem outlineProblem))
 
-        Right (Solver.Env cache _ connection registry) ->
-          do  result <- Solver.verify cache connection registry defaults
-              case result of
-                Solver.Err exit ->
-                  return (Left (Exit.InitSolverProblem exit))
+        Right (Outline.Pkg _) ->
+          return (Left (Exit.InitPackage))
 
-                Solver.NoSolution ->
-                  return (Left (Exit.InitNoSolution (Map.keys defaults)))
+        Right (Outline.App (Outline.AppOutline ver srcDirs dd di td ti)) ->
+          let newSrcDirs =
+                NE.List
+                  (Outline.RelativeSrcDir "elm-generate-scripts")
+                  (filter
+                    ((/=) (Outline.RelativeSrcDir "elm-generate-scripts"))
+                    (NE.toList srcDirs))
 
-                Solver.NoOfflineSolution ->
-                  return (Left (Exit.InitNoOfflineSolution (Map.keys defaults)))
-
-                Solver.Ok details ->
-                  let
-                    solution = Map.map (\(Solver.Details vsn _) -> vsn) details
-                    directs = Map.intersection solution defaults
-                    indirects = Map.difference solution defaults
-                  in
-                  do  Dir.createDirectoryIfMissing True "elm-generate-scripts"
-                      Elm.ElmGenerateScripts.writeModules "elm-generate-scripts"
-                      putStrLn "Initialized!"
-                      return (Right ())
-
+              newOutline =
+                Outline.AppOutline ver newSrcDirs dd di td ti
+          in
+          do  Dir.createDirectoryIfMissing True "elm-generate-scripts"
+              Elm.ElmGenerateScripts.writeModules "elm-generate-scripts"
+              Outline.write root (Outline.App newOutline)
+              putStrLn "Initialized!"
+              return (Right ())
 
 defaults :: Map.Map Pkg.Name Con.Constraint
 defaults =

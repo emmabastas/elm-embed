@@ -87,11 +87,13 @@ toJson report =
 
 data Init
   = InitNoOutline
+  | InitOutlineProblem Outline
   | InitNoSolution [Pkg.Name]
   | InitNoOfflineSolution [Pkg.Name]
   | InitSolverProblem Solver
   | InitAlreadyExists
   | InitRegistryProblem RegistryProblem
+  | InitPackage
 
 
 initToReport :: Init -> Help.Report
@@ -103,6 +105,9 @@ initToReport exit =
         [ D.indent 4 $ D.green $ "elm init"
           , D.reflow "After that you can run" <> D.green " elm-generate init"
         ]
+
+    InitOutlineProblem outlineProblem ->
+      toOutlineReport outlineProblem
 
     InitNoSolution pkgs ->
       Help.report "NO SOLUTION" Nothing
@@ -142,6 +147,11 @@ initToReport exit =
     InitRegistryProblem problem ->
       toRegistryProblemReport "PROBLEM LOADING PACKAGE LIST" problem $
         "I need the list of published packages before I can start initializing projects"
+
+    InitPackage ->
+      Help.report "CANNOT USE ELM-GENERATE IN PACKAGE" Nothing
+        "elm-generate is can only be used in an app project."
+        []
 
 
 

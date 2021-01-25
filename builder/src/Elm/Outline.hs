@@ -82,6 +82,7 @@ data Exposed
 data SrcDir
   = AbsoluteSrcDir FilePath
   | RelativeSrcDir FilePath
+  deriving Eq
 
 
 
