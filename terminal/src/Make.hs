@@ -293,8 +293,8 @@ emitModule (Opt.LocalGraph generators _ _ moduleNameInSrc) moduleName generated 
               Nothing ->
                 [ (bodyInSrc, Text.pack result) ]
 
-              Just typeInSrc ->
-                [ (typeInSrc, "")
+              Just (A.Region sp (A.Position er ec)) ->
+                [ ((A.Region sp (A.Position er (ec + 1))), "")
                 , (bodyInSrc, Text.pack result)
                 ]
           )
