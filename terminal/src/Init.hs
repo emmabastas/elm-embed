@@ -35,29 +35,28 @@ run () () =
             return (Left Exit.InitNoOutline)
 
           Just root ->
-            init root
+            do  approved <- Reporting.ask question
+                if approved
+                  then init root
+                  else
+                    do  putStrLn "Exiting without making any changes."
+                        return (Right ())
 
 
 
 question :: D.Doc
 question =
   D.stack
-    [ D.fillSep
-        ["Hello!"
-        ,"Elm","projects","always","start","with","an",D.green "elm.json","file."
-        ,"I","can","create","them!"
-        ]
-    , D.reflow
-        "Now you may be wondering, what will be in this file? How do I add Elm files to\
-        \ my project? How do I see it in the browser? How will my code grow? Do I need\
-        \ more directories? What about tests? Etc."
-    , D.fillSep
-        ["Check","out",D.cyan (D.fromChars (D.makeLink "init"))
-        ,"for","all","the","answers!"
-        ]
-    , "Knowing all that, would you like me to create an elm.json file now? [Y/n]: "
+    [ D.reflow "This is what I will do to initialize elm-generate:"
+    , D.indent 4 $ D.stack
+      [ D.reflow
+        "* Create a folder named `elm-generate-scripts` and place some Elm modules in there.\
+        \ This is the place where you will write you generators later on."
+      , D.reflow
+        "* Add `elm-generate-scripts` to your `source-directories` in `elm.json`."
+      ]
+    , "Ok? [Y/n]: "
     ]
-
 
 
 -- INIT
@@ -87,7 +86,7 @@ init root =
           do  Dir.createDirectoryIfMissing True "elm-generate-scripts"
               Elm.ElmGenerateScripts.writeModules "elm-generate-scripts"
               Outline.write root (Outline.App newOutline)
-              putStrLn "Initialized!"
+              putStrLn "All done!"
               return (Right ())
 
 defaults :: Map.Map Pkg.Name Con.Constraint
