@@ -8,6 +8,7 @@ module Init
 import Prelude hiding (init)
 import qualified Data.Map as Map
 import qualified Data.NonEmptyList as NE
+import qualified Data.Maybe as Maybe
 import qualified System.Directory as Dir
 
 import qualified Deps.Solver as Solver
@@ -54,6 +55,9 @@ question =
         \ This is the place where you will write you generators later on."
       , D.reflow
         "* Add `elm-generate-scripts` to your `source-directories` in `elm.json`."
+
+      , D.reflow
+        "* Add elm/json to your direct dependencies."
       ]
     , "Ok? [Y/n]: "
     ]
@@ -73,26 +77,24 @@ init root =
           return (Left (Exit.InitPackage))
 
         Right (Outline.App (Outline.AppOutline ver srcDirs dd di td ti)) ->
-          let newSrcDirs =
-                NE.List
-                  (Outline.RelativeSrcDir "elm-generate-scripts")
-                  (filter
-                    ((/=) (Outline.RelativeSrcDir "elm-generate-scripts"))
-                    (NE.toList srcDirs))
+          let   newSrcDirs =
+                  NE.List
+                    (Outline.RelativeSrcDir "elm-generate-scripts")
+                    (filter
+                      ((/=) (Outline.RelativeSrcDir "elm-generate-scripts"))
+                      (NE.toList srcDirs))
 
-              newOutline =
-                Outline.AppOutline ver newSrcDirs dd di td ti
+                elmJson = Maybe.fromMaybe (V.Version 1 1 3) $
+                    Map.lookup Pkg.json (Map.union dd di)
+
+                dd_ = Map.insert Pkg.json elmJson dd
+                di_ = Map.delete Pkg.json di
+
+                newOutline =
+                  Outline.AppOutline ver newSrcDirs dd_ di_ td ti
           in
           do  Dir.createDirectoryIfMissing True "elm-generate-scripts"
               Elm.ElmGenerateScripts.writeModules "elm-generate-scripts"
               Outline.write root (Outline.App newOutline)
               putStrLn "All done!"
               return (Right ())
-
-defaults :: Map.Map Pkg.Name Con.Constraint
-defaults =
-  Map.fromList
-    [ (Pkg.core, Con.anything)
-    , (Pkg.browser, Con.anything)
-    , (Pkg.html, Con.anything)
-    ]
