@@ -46,7 +46,7 @@ for (let { moduleName, declarationName, v } of successes) {
   if (declarationName.startsWith("_"))
     declarationName = declarationName.slice(1)
 
-  elmData[moduleName][declarationName] = toElmValue(v)
+  elmData[moduleName][declarationName] = "\n    " + toElmValue(v, 4)
 }
 
 console.log(JSON.stringify({
@@ -95,14 +95,15 @@ function performCommand(command, args) {
   throw new Error("Invalid IO command: `" + command + "`")
 }
 
-function toElmValue(v) {
+function toElmValue(v, indent) {
+  let p = (" ").repeat(indent)
   if (typeof v === "boolean") {
     if (v) return "True"
     else return "False"
   }
 
   if (typeof v === "number")
-    return "" + v
+    return v
 
   if (v instanceof String)
     return "'" + v + "'"
@@ -120,55 +121,65 @@ function toElmValue(v) {
       let children = []
       for (k in v) {
         if (k === "$") continue
-        children.push(toElmValue(v[k]))
+        children.push(toElmValue(v[k], indent))
       }
-      return "( " + children.join(", ") + " )"
+      return "(" + children.join("\n" + p +  ", ") + "\n" + p + ")"
     }
 
     if (tag === "Set_elm_builtin") {
       let asList = $elm$core$Set$toList(v)
-      return "Set.fromList " + toElmValue(asList)
+      return "Set.fromList\n" + p + "    " + toElmValue(asList, indent + 4)
     }
 
     if (tag === "RBNode_elm_builtin" || tag === "RBEmpty_elm_builtin") {
       let asList = $elm$core$Dict$toList(v)
-      return "Dict.fromList " + toElmValue(asList)
+      return "Dict.fromList\n" + p + "    " + toElmValue(asList, indent + 4)
     }
 
     if (tag === "Array_elm_builtin") {
       let asList = $elm$core$Array$toList(v)
-      return "Array.fromList " + toElmValue(asList)
+      return "Array.fromList\n" + p + "    " + toElmValue(asList, indent + 4)
     }
 
     if (tag === "::" || tag === "[]") {
       let array = toArray(v)
-      array = "[" + array.map(toElmValue).join(", ") + "]"
+      array = "[ " + array.map(e => toElmValue(e, indent + 2)).join("\n" + p + ", ") + "\n" + p + "]"
       return array
     }
 
     let children = [ v.a, v.b, v.c, v.d, v.e, v.f, v.g, v.h ]
       .filter(c => typeof c !== "undefined")
-      .map(toElmValue)
-      .join(" ")
+      .map(e => {
+        if (ambiguousSpacing(e)) {
+          return "(" + toElmValue(e, indent + 4) + "\n" + p + "    )"
+        }
+        else {
+          return toElmValue(e, indent + 4)
+        }
+      })
+      .join("\n    " + p)
 
-    return tag + " " + children
+    return tag + "\n    " + p  + children
   }
 
   if (typeof v === "object" && ! ("$" in v) ) {
     keyValues = []
     for (let key in v) {
       let value = v[key]
-      keyValues.push([key, toElmValue(value)])
+      keyValues.push(key + " = " + toElmValue(value, indent + 2))
     }
 
-    let singleLine = "{ "
-      + keyValues.map(([k, v]) => k + " = " + v).join(", ")
-      + " }"
-
-    return singleLine
+    return "{ " + keyValues.map(s => s).join("\n" + p + ", ") + "\n" + p + "}"
   }
 
   console.log(v)
+}
+
+function ambiguousSpacing(v) {
+  if ( typeof v === "object" && "$" in v && (v.$[0] !== "#" && v.$ !== "::"  && v.$ !== "[]") )
+    return true
+  else
+    return false
 }
 
 function toArray(elmList) {
