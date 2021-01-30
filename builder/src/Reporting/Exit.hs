@@ -150,7 +150,7 @@ initToReport exit =
 
     InitPackage ->
       Help.report "CANNOT USE ELM-GENERATE IN PACKAGE" Nothing
-        "elm-embed is can only be used in an app project."
+        "elm-embed can only be used in an app."
         []
 
 
@@ -1772,10 +1772,10 @@ makeToReport make =
       toGenerateReport generateProblem
 
     MakeNoGeneratorModules ->
-      Help.report "NO GENERATORS" Nothing
-        ( "I looked inside `elm-embed-scripts` but i didn't find any generator modules.\
-          \ A generator module is any top-level module inside `elm-elmbed-scripts` that\
-          \isn't named Generate.elm"
+      Help.report "NO EMBEDDERS" Nothing
+        ( "I looked inside `elm-embed-scripts` but i didn't find any embedder modules.\
+          \ An embedder module is any top-level module inside `elm-elmbed-scripts` that\
+          \isn't named Embed.elm"
         )
         [ D.reflow $
             "Try creating a module inside `elm-elmbed-scripts`"
@@ -1806,25 +1806,25 @@ makeToReport make =
             ]
 
         _:_ ->
-          Help.report "NO GENERATORS" Nothing
+          Help.report "NO EMBEDDERS" Nothing
             (
-              "Some of the generator modules inside `elm-elmbed-scripts` don't have any exposed\
-                \ generator values."
+              "Some of the embedder modules inside `elm-elmbed-scripts` don't have any exposed\
+                \ embedder declaratoins."
             )
             [ D.indent 4 $ D.red $ D.vcat $ map D.fromName (m:ms)
             , D.reflow $
-              "Try adding a generator value to you file, if you already have one then make sure\
+              "Try adding and embedder declaration to you module, if you already have one then make sure\
                 \ it's exposed"
             , D.toSimpleNote $
-                "A generator value is anything with the type `Generate.Task`"
+                "An embedder is any declaration with the type `Embed.Task`"
             , D.indent 4 $ D.vcat
-              [ D.fillSep [ "module", D.fromChars (ModuleName.toChars m), "exposing(" <> (D.green "myValue") <> ")" ]
+              [ D.fillSep [ "module", D.fromChars (ModuleName.toChars m), "exposing(" <> (D.green "myEmbedder") <> ")" ]
               , ""
-              , D.fillSep ["import", D.cyan "Generate"]
+              , D.fillSep ["import", D.cyan "Embed"]
               , ""
-              , D.fillSep [D.green "myValue", ":", D.cyan "Generate" <> D.dullyellow ".Task", "String"]
-              , D.fillSep [D.green "myValue","="]
-              , D.indent 2 $ D.fillSep [D.cyan "Generate" <> ".succeed \"Hello!\""]
+              , D.fillSep [D.green "myEmbedder", ":", D.cyan "Embed" <> D.dullyellow ".Task", "String"]
+              , D.fillSep [D.green "myEmbedder","="]
+              , D.indent 2 $ D.fillSep [D.cyan "Embed" <> ".succeed \"Hello!\""]
               ]
             ]
 
