@@ -16,6 +16,8 @@ import Text.RawString.QQ (r)
 runner :: B.Builder
 runner = [r|
 
+var fs = require("fs")
+
 successes = []
 errors = []
 
@@ -90,6 +92,22 @@ function performCommand(command, args) {
       return null
     else
       return value
+  }
+
+  if (command === "Embed.File.read_") {
+    let [ path ] = args
+    path = path.a
+
+    try {
+      let contents = fs.readFileSync(path, "utf8")
+      contents = contents
+        .replace(/\\/g, "\\\\")
+        .replace(/\n/g, "\\n")
+        .replace(/"/g, '\\"')
+      return { Ok : contents }
+    } catch(e) {
+      return { Err : e.message }
+    }
   }
 
   throw new Error("Invalid IO command: `" + command + "`")
