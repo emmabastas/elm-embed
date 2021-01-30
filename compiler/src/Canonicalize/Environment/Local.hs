@@ -310,7 +310,7 @@ toRecordCtor home name vars fields =
     alias =
       foldr
         (\(_,t1) t2 -> Can.TLambda t1 t2)
-        (Can.TAlias home name avars (Can.Filled (Can.TRecord fields Nothing)))
+        (Can.TAlias Nothing home name avars (Can.Filled (Can.TRecord fields Nothing)))
         (Can.fieldsToList fields)
   in
   Env.RecordCtor home vars alias

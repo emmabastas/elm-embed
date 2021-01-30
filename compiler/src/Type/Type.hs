@@ -90,7 +90,7 @@ data FlatType
 
 data Type
     = PlaceHolder Name.Name
-    | AliasN ModuleName.Canonical Name.Name [(Name.Name, Type)] Type
+    | AliasN (Maybe A.Region) ModuleName.Canonical Name.Name [(Name.Name, Type)] Type
     | VarN Variable
     | AppN (Maybe A.Region) ModuleName.Canonical Name.Name [Type]
     | FunN Type Type
@@ -378,7 +378,7 @@ variableToCanType variable =
         Alias home name args realVariable ->
             do  canArgs <- traverse (traverse variableToCanType) args
                 canType <- variableToCanType realVariable
-                return (Can.TAlias home name canArgs (Can.Filled canType))
+                return (Can.TAlias Nothing home name canArgs (Can.Filled canType))
 
         Error ->
             error "cannot handle Error types in variableToCanType"

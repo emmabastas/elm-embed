@@ -17,7 +17,7 @@ module Elm.ModuleName
   , virtualDom
   , jsonDecode, jsonEncode
   , webgl, texture, vector2, vector3, vector4, matrix4
-  , embed
+  , embed, embedInternal
   )
   where
 
@@ -287,3 +287,8 @@ matrix4 = Canonical Pkg.linearAlgebra "math.matrix4"
 {-# noinline embed #-}
 embed :: Canonical
 embed = Canonical Pkg.dummyName "Embed"
+
+
+{-# noinline embedInternal #-}
+embedInternal :: Canonical
+embedInternal = Canonical Pkg.dummyName "Embed.Internal"

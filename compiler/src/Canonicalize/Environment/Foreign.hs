@@ -185,7 +185,7 @@ aliasToTypeHelp home name (Can.Alias vars tipe) =
           alias =
             foldr
               (\(_,t1) t2 -> Can.TLambda t1 t2)
-              (Can.TAlias home name avars (Can.Filled tipe))
+              (Can.TAlias Nothing home name avars (Can.Filled tipe))
               (Can.fieldsToList fields)
         in
         Map.singleton name (Env.Specific home (Env.RecordCtor home vars alias))

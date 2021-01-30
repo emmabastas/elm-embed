@@ -252,7 +252,9 @@ addDefHelp annotations home name args body bodyRegion graph =
     (Can.Forall _ tipe) = annotations ! name
   in
     case tipe of
-      Can.TType typeRegion hm nm [_] | hm == ModuleName.embed && nm == Name.task ->
+      Can.TAlias typeRegion hm nm [_] (Can.Filled (Can.TType _ hm_ nm_ [_]))
+        | hm == ModuleName.embed && hm_ == ModuleName.embedInternal
+        && nm == Name.task && nm_ == Name.task ->
         let
           generator =
             Opt.Generator (Opt.Global home name) typeRegion bodyRegion

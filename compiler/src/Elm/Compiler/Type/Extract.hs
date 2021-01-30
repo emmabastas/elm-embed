@@ -69,7 +69,7 @@ extract astType =
         <*> extract b
         <*> traverse extract (Maybe.maybeToList maybeC)
 
-    Can.TAlias home name args aliasType ->
+    Can.TAlias _ home name args aliasType ->
       do  addAlias (Opt.Global home name) ()
           _ <- extract (Type.dealias args aliasType)
           T.Type (toPublicName home name)

@@ -28,7 +28,7 @@ import qualified Optimize.Names as Names
 toEncoder :: Can.Type -> Names.Tracker Opt.Expr
 toEncoder tipe =
   case tipe of
-    Can.TAlias _ _ args alias ->
+    Can.TAlias _ _ _ args alias ->
       toEncoder (Type.dealias args alias)
 
     Can.TLambda _ _ ->
@@ -162,7 +162,7 @@ toDecoder tipe =
     Can.TVar _ ->
       error "type variables should not be allowed through input ports"
 
-    Can.TAlias _ _ args alias ->
+    Can.TAlias _ _ _ args alias ->
       toDecoder (Type.dealias args alias)
 
     Can.TUnit ->

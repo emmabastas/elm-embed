@@ -450,7 +450,7 @@ typeToVar rank pools aliasDict tipe =
           bVar <- go b
           register rank pools (Structure (Fun1 aVar bVar))
 
-    AliasN home name args aliasType ->
+    AliasN _ home name args aliasType ->
       do  argVars <- traverse (traverse go) args
           aliasVar <- typeToVar rank pools (Map.fromList argVars) aliasType
           register rank pools (Alias home name argVars aliasVar)
@@ -550,7 +550,7 @@ srcTypeToVar rank pools flexVars srcType =
           cVar <- traverse go c
           register rank pools (Structure (Tuple1 aVar bVar cVar))
 
-    Can.TAlias home name args aliasType ->
+    Can.TAlias region home name args aliasType ->
       do  argVars <- traverse (traverse go) args
           aliasVar <-
             case aliasType of

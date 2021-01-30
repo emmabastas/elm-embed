@@ -1,38 +1,36 @@
-module Embed exposing (Task(..), andThen, fail, map, succeed)
+module Embed exposing (Task, andThen, fail, map, succeed)
 
-import Json.Decode as Decode exposing (Decoder)
-import Json.Encode exposing (Value)
+import Embed.Internal
+import Json.Decode as Decode
 
 
-type Task a
-    = Task String (List Value) (Decoder (Task a))
-    | Done a
-    | Fail String
+type alias Task a =
+    Embed.Internal.Task a
 
 
 succeed : a -> Task a
 succeed =
-    Done
+    Embed.Internal.Done
 
 
 fail : String -> Task a
 fail =
-    Fail
+    Embed.Internal.Fail
 
 
 map : (a -> b) -> Task a -> Task b
 map f =
-    andThen (f >> Done)
+    andThen (f >> succeed)
 
 
 andThen : (a -> Task b) -> Task a -> Task b
 andThen f io =
     case io of
-        Done v ->
+        Embed.Internal.Done v ->
             f v
 
-        Fail message ->
-            Fail message
+        Embed.Internal.Fail message ->
+            Embed.Internal.Fail message
 
-        Task taskName args decoder ->
-            Task taskName args (Decode.map (andThen f) decoder)
+        Embed.Internal.Task taskName args decoder ->
+            Embed.Internal.Task taskName args (Decode.map (andThen f) decoder)

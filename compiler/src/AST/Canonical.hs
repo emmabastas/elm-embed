@@ -51,7 +51,7 @@ So it is clear why the data is kept around.
 -}
 
 
-import Control.Monad (liftM, liftM2, liftM3, liftM4, replicateM)
+import Control.Monad (liftM, liftM2, liftM3, liftM4, liftM5, replicateM)
 import Data.Binary
 import qualified Data.List as List
 import qualified Data.Map as Map
@@ -195,7 +195,7 @@ data Type
   | TRecord (Map.Map Name FieldType) (Maybe Name)
   | TUnit
   | TTuple Type Type (Maybe Type)
-  | TAlias ModuleName.Canonical Name [(Name, Type)] AliasType
+  | TAlias (Maybe A.Region) ModuleName.Canonical Name [(Name, Type)] AliasType
   deriving (Eq)
 
 
@@ -358,7 +358,7 @@ instance Binary Type where
       TRecord a b        -> putWord8 2 >> put a >> put b
       TUnit              -> putWord8 3
       TTuple a b c       -> putWord8 4 >> put a >> put b >> put c
-      TAlias a b c d     -> putWord8 5 >> put a >> put b >> put c >> put d
+      TAlias a b c d e   -> putWord8 5 >> put a >> put b >> put c >> put d >> put e
       TType home region name ts ->
         let potentialWord = length ts + 7 in
         if potentialWord <= fromIntegral (maxBound :: Word8) then
@@ -378,7 +378,7 @@ instance Binary Type where
           2 -> liftM2 TRecord get get
           3 -> return TUnit
           4 -> liftM3 TTuple get get get
-          5 -> liftM4 TAlias get get get get
+          5 -> liftM5 TAlias get get get get get
           6 -> liftM4 TType get get get get
           n -> liftM4 TType get get get (replicateM (fromIntegral (n - 7)) get)
 

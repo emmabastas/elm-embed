@@ -104,7 +104,7 @@ canonicalizeType env region nameRegion name args info =
       case info of
         Env.Alias arity home argNames aliasedType ->
           checkArity arity region name args $
-            Can.TAlias home name (zip argNames cargs) (Can.Holey aliasedType)
+            Can.TAlias (Just nameRegion) home name (zip argNames cargs) (Can.Holey aliasedType)
 
         Env.Union arity home ->
           checkArity arity region name args $
@@ -153,7 +153,7 @@ addFreeVars freeVars tipe =
         Just c ->
           addFreeVars (addFreeVars (addFreeVars freeVars a) b) c
 
-    Can.TAlias _ _ args _ ->
+    Can.TAlias _ _ _ args _ ->
       List.foldl' (\fvs (_,arg) -> addFreeVars fvs arg) freeVars args
 
 

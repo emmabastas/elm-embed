@@ -231,7 +231,7 @@ canToDoc localizer context tipe =
         (canToDoc localizer None b)
         (map (canToDoc localizer None) (Maybe.maybeToList maybeC))
 
-    Can.TAlias home name args _ ->
+    Can.TAlias _ home name args _ ->
       apply context
         (L.toDoc localizer home name)
         (map (canToDoc localizer App . snd) args)

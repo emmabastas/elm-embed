@@ -160,7 +160,7 @@ verifyManager tagRegion values name =
 checkPayload :: Can.Type -> Either (Can.Type, Error.InvalidPayload) ()
 checkPayload tipe =
   case tipe of
-    Can.TAlias _ _ args aliasedType ->
+    Can.TAlias _ _ _ args aliasedType ->
       checkPayload (Type.dealias args aliasedType)
 
     Can.TType _ home name args ->
