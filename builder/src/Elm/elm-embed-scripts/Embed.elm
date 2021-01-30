@@ -1,4 +1,4 @@
-module Generate exposing (Task(..), andThen, fail, map, succeed)
+module Embed exposing (Task(..), andThen, fail, map, succeed)
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode exposing (Value)

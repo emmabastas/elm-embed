@@ -1,5 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
-module Elm.ElmGenerateScripts
+module Elm.ElmEmbedScripts
   ( modules
   , writeModules
   , exists
@@ -23,7 +23,7 @@ import Control.Exception (assert)
 
 
 modules :: Map.Map FilePath BS.ByteString
-modules = Map.fromList $ $(embedDir "builder/src/Elm/elm-generate-scripts")
+modules = Map.fromList $ $(embedDir "builder/src/Elm/elm-embed-scripts")
 
 writeModules :: FilePath -> IO ()
 writeModules root =

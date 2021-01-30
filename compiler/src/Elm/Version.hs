@@ -25,7 +25,7 @@ import Data.Binary (Binary, get, put, getWord8, putWord8)
 import qualified Data.Version as Version
 import Data.Word (Word8, Word16)
 import Foreign.Ptr (Ptr, plusPtr, minusPtr)
-import qualified Paths_elm_generate
+import qualified Paths_elm_embed
 
 import qualified Json.Decode as D
 import qualified Json.Encode as E
@@ -63,7 +63,7 @@ compiler =
 
 elmGenerate :: Version
 elmGenerate =
-  case map fromIntegral (Version.versionBranch Paths_elm_generate.version) of
+  case map fromIntegral (Version.versionBranch Paths_elm_embed.version) of
     major : minor : patch : _ ->
       Version major minor patch
 

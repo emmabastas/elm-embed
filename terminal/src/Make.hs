@@ -91,14 +91,14 @@ runHelp root style maybeInterpreter =
   BW.withScope $ \scope ->
   Stuff.withRootLock root $ Task.run $
   do  details <- Task.eio Exit.MakeBadDetails (Details.load style scope root)
-      inputFiles <- getGeneratorFiles "elm-generate-scripts"
+      inputFiles <- getGeneratorFiles "elm-embed-scripts"
       case inputFiles of
         [] ->
           Task.throw Exit.MakeNoGeneratorModules
 
         f:fs ->
           let
-            inputPaths = fmap (FP.combine "elm-generate-scripts") (NE.List f fs)
+            inputPaths = fmap (FP.combine "elm-embed-scripts") (NE.List f fs)
           in
           do  artifacts <- buildPaths style root details inputPaths
               case getNoGenerators artifacts of
@@ -134,7 +134,7 @@ getGeneratorFiles directory =
   Task.eio (\_ -> Exit.MakeNoGenerateScriptsFolder) $
     do  result <- try $ Dir.listDirectory directory :: IO (Either IOError [FilePath])
         return $ fmap
-          (filter (\p -> p /= "Generate.elm" && p /= "Generate"))
+          (filter (\p -> p /= "Embed.elm" && p /= "Embed"))
           result
 
 
@@ -264,10 +264,10 @@ emitGenerated (Generate.Objects _ locals) generated =
     do
         fmap (\_ -> () ) $ mapM
           (\(moduleName, graph) ->
-            if "Generate" `List.isPrefixOf` (Name.toChars moduleName) then
+            if "Embed" `List.isPrefixOf` (Name.toChars moduleName) then
               return ()
             else
-              let inputPath = "elm-generate-scripts" </> Name.toChars moduleName <.> "elm"
+              let inputPath = "elm-embed-scripts" </> Name.toChars moduleName <.> "elm"
                   outputFolder = "src/Generated"
                   outputPath = outputFolder </> Name.toChars moduleName <.> "elm"
                   outputModule = "Generated." ++ Name.toChars moduleName

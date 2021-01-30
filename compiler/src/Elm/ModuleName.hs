@@ -17,7 +17,7 @@ module Elm.ModuleName
   , virtualDom
   , jsonDecode, jsonEncode
   , webgl, texture, vector2, vector3, vector4, matrix4
-  , generate
+  , embed
   )
   where
 
@@ -284,6 +284,6 @@ matrix4 :: Canonical
 matrix4 = Canonical Pkg.linearAlgebra "math.matrix4"
 
 
-{-# noinline generate #-}
-generate :: Canonical
-generate = Canonical Pkg.dummyName "Generate"
+{-# noinline embed #-}
+embed :: Canonical
+embed = Canonical Pkg.dummyName "Embed"

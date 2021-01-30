@@ -33,7 +33,7 @@ main =
 
 intro :: P.Doc
 intro =
-  P.fillSep ["elm-generate", P.text (V.toChars V.elmGenerate)]
+  P.fillSep ["elm-embed", P.text (V.toChars V.elmGenerate)]
 
 
 outro :: P.Doc
@@ -50,14 +50,14 @@ init :: Terminal.Command
 init =
   let
     summary =
-      "Initialize elm-generate for this project"
+      "Initialize elm-embed for this project"
 
     details =
-      "Initialize elm-generate for this project"
+      "Initialize elm-embed for this project"
 
     example =
       reflow
-        "Creates an `elm-generate-scripts` folder with modules consumed by your\
+        "Creates an `elm-embed-scripts` folder with modules consumed by your\
         \ generators, also adds this folder to `source-directories` in `elm.json`."
   in
   Terminal.Command "init" (Common summary) details example noArgs noFlags Init.run
@@ -71,10 +71,10 @@ make :: Terminal.Command
 make =
   let
     summary =
-      "Generate Elm code from the generators in `elm-generate-scripts`"
+      "Generate Elm code from the generators in `elm-embed-scripts`"
 
     details =
-      "Generate Elm code from the generators in `elm-generate-scripts`"
+      "Generate Elm code from the generators in `elm-embed-scripts`"
 
     example =
       stack []
@@ -84,7 +84,7 @@ make =
         |-- flag "interpreter" Make.interpreterPath "Path to a alternate JS interpreter, like node or nodejs."
         |-- flag "report" Make.reportType "You can say --report=json to get error messages as JSON. This is only really useful if you are an editor plugin. Humans should avoid it!"
   in
-  Terminal.Command "make" (Common summary) details example noArgs makeFlags Make.run
+  Terminal.Command "run" (Common summary) details example noArgs makeFlags Make.run
 
 
 

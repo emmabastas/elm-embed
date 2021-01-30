@@ -16,7 +16,7 @@ import qualified Elm.Constraint as Con
 import qualified Elm.Outline as Outline
 import qualified Elm.Package as Pkg
 import qualified Elm.Version as V
-import qualified Elm.ElmGenerateScripts
+import qualified Elm.ElmEmbedScripts
 import qualified Reporting
 import qualified Reporting.Doc as D
 import qualified Reporting.Exit as Exit
@@ -51,10 +51,10 @@ question =
     [ D.reflow "This is what I will do to initialize elm-generate:"
     , D.indent 4 $ D.stack
       [ D.reflow
-        "* Create a folder named `elm-generate-scripts` and place some Elm modules in there.\
+        "* Create a folder named `elm-embed-scripts` and place some Elm modules in there.\
         \ This is the place where you will write you generators later on."
       , D.reflow
-        "* Add `elm-generate-scripts` to your `source-directories` in `elm.json`."
+        "* Add `elm-embed-scripts` to your `source-directories` in `elm.json`."
 
       , D.reflow
         "* Add elm/json to your direct dependencies."
@@ -79,9 +79,9 @@ init root =
         Right (Outline.App (Outline.AppOutline ver srcDirs dd di td ti)) ->
           let   newSrcDirs =
                   NE.List
-                    (Outline.RelativeSrcDir "elm-generate-scripts")
+                    (Outline.RelativeSrcDir "elm-embed-scripts")
                     (filter
-                      ((/=) (Outline.RelativeSrcDir "elm-generate-scripts"))
+                      ((/=) (Outline.RelativeSrcDir "elm-embed-scripts"))
                       (NE.toList srcDirs))
 
                 elmJson = Maybe.fromMaybe (V.Version 1 1 3) $
@@ -93,8 +93,8 @@ init root =
                 newOutline =
                   Outline.AppOutline ver newSrcDirs dd_ di_ td ti
           in
-          do  Dir.createDirectoryIfMissing True "elm-generate-scripts"
-              Elm.ElmGenerateScripts.writeModules "elm-generate-scripts"
+          do  Dir.createDirectoryIfMissing True "elm-embed-scripts"
+              Elm.ElmEmbedScripts.writeModules "elm-embed-scripts"
               Outline.write root (Outline.App newOutline)
               putStrLn "All done!"
               return (Right ())

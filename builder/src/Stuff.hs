@@ -37,7 +37,7 @@ import qualified Elm.Version as V
 
 stuff :: FilePath -> FilePath
 stuff root =
-  root </> "elm-stuff" </> "elm-generate" </> elmGenerateVersion
+  root </> "elm-stuff" </> "elm-embed" </> elmGenerateVersion
 
 
 details :: FilePath -> FilePath
@@ -166,7 +166,7 @@ getReplCache =
 getCacheDir :: FilePath -> IO FilePath
 getCacheDir projectName =
   do  home <- getElmHome
-      let root = home </> "elm-generate" </> elmGenerateVersion </> projectName
+      let root = home </> "elm-embed" </> elmGenerateVersion </> projectName
       Dir.createDirectoryIfMissing True root
       return root
 

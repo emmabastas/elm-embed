@@ -101,9 +101,9 @@ initToReport exit =
   case exit of
     InitNoOutline ->
       Help.report "NO elm.json FILE" Nothing
-        "Before initializing elm-generate you need to initialize an Elm project. Try running:"
+        "Before initializing elm-embed you need to initialize an Elm project. Try running:"
         [ D.indent 4 $ D.green $ "elm init"
-          , D.reflow "After that you can run" <> D.green " elm-generate init"
+          , D.reflow "After that you can run" <> D.green " elm-embed init"
         ]
 
     InitOutlineProblem outlineProblem ->
@@ -150,7 +150,7 @@ initToReport exit =
 
     InitPackage ->
       Help.report "CANNOT USE ELM-GENERATE IN PACKAGE" Nothing
-        "elm-generate is can only be used in an app project."
+        "elm-embed is can only be used in an app project."
         []
 
 
@@ -1773,12 +1773,12 @@ makeToReport make =
 
     MakeNoGeneratorModules ->
       Help.report "NO GENERATORS" Nothing
-        ( "I looked inside `elm-generate-scripts` but i didn't find any generator modules.\
-          \ A generator module is any top-level module inside `elm-generate-scripts` that\
+        ( "I looked inside `elm-embed-scripts` but i didn't find any generator modules.\
+          \ A generator module is any top-level module inside `elm-elmbed-scripts` that\
           \isn't named Generate.elm"
         )
         [ D.reflow $
-            "Try creating a module inside `elm-generate-scripts`"
+            "Try creating a module inside `elm-elmbed-scripts`"
         ]
 
     MakeGeneratorModulesWithoutGenerators m ms ->
@@ -1808,7 +1808,7 @@ makeToReport make =
         _:_ ->
           Help.report "NO GENERATORS" Nothing
             (
-              "Some of the generator modules inside `elm-generate-scripts` don't have any exposed\
+              "Some of the generator modules inside `elm-elmbed-scripts` don't have any exposed\
                 \ generator values."
             )
             [ D.indent 4 $ D.red $ D.vcat $ map D.fromName (m:ms)
@@ -1829,16 +1829,16 @@ makeToReport make =
             ]
 
     MakeNoGenerateScriptsFolder ->
-      Help.report "NO elm-generate-scripts FOLDER" Nothing
+      Help.report "NO elm-embed-scripts FOLDER" Nothing
         "Try running:"
-        [ D.indent 4 $ D.green $ "elm-generate init"
+        [ D.indent 4 $ D.green $ "elm-embed init"
         , D.reflow $
             "It will help you get set up. It is really simple!"
         ]
 
     MakeIntepreterNotFound name ->
       Help.report "INTERPRETER NOT FOUND" Nothing
-        ( "`elm-generate` relies on node.js to execute the code in `elm-generate-scripts\n"
+        ( "`elm-embed` relies on node.js to execute the code in `elm-embed-scripts\n"
           ++ "after they have been compiled. I could no find executable `" ++ name ++ "\n"
           ++ "in your PATH though!\n\n"
           ++ "You can use the --interpreter flag to specifying the location of the interpreter"

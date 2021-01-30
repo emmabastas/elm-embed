@@ -1,22 +1,21 @@
 
-Name: elm-generate
+Name: elm-embed
 Version: 0.1.0
 
 Synopsis:
-    The `elm-generate` command line interface.
+    The `elm-embed` command line interface.
 
 Description:
-    Run Elm code as a build step, read environment variables, files on disk
-    and make http request at buildtime.
+    Read, parse and embed environment variables and file content into your Elm code.
 
-Homepage: https://github.com/emmabastas/elm-generate
+Homepage: https://github.com/emmabastas/elm-embed
 
 License: BSD3
 License-file: LICENSE
 
 Author:     Emma Bastås
 Maintainer: emma.bastas@protonmail.com
-Copyright:  See https://github.com/emmabastas/elm-generate/blob/master/LICENSE
+Copyright:  See https://github.com/emmabastas/elm-embed/blob/master/LICENSE
 
 Category: Tooling
 
@@ -25,7 +24,7 @@ Build-type: Simple
 
 source-repository head
     type:     git
-    location: git://github.com/emmabastas/elm-generate.git
+    location: git://github.com/emmabastas/elm-embed.git
 
 
 Flag dev {
@@ -34,7 +33,7 @@ Flag dev {
 }
 
 
-Executable elm-generate
+Executable elm-embed
     if flag(dev)
         -- ghc-options: -O0 -Wall -Werror
         ghc-options: -O0 -Wall
@@ -91,7 +90,7 @@ Executable elm-generate
         -- Elm things
         Elm.Outline
         Elm.Details
-        Elm.ElmGenerateScripts
+        Elm.ElmEmbedScripts
         --
         Elm.Compiler.Imports
         Elm.Compiler.Type
@@ -196,7 +195,7 @@ Executable elm-generate
         Type.Type
         Type.Unify
         Type.UnionFind
-        Paths_elm_generate
+        Paths_elm_embed
 
     Build-depends:
         aeson >= 1.5.4 && < 1.6,
