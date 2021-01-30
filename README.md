@@ -1,22 +1,71 @@
-# Elm
+# `elm-embed`
 
-A delightful language for reliable webapps.
+Read, parse and embed environment variables and file content into your Elm code.
 
-Check out the [Home Page](http://elm-lang.org/), [Try Online](http://elm-lang.org/try), or [The Official Guide](http://guide.elm-lang.org/)
+## Core concepts
 
+Data is embedded with _Embedders_. Embedders live inside a special folder, `elm-embed-scripts`, and they're any Elm declaration with the signature `Embed.Task`. Working with embedders is similar to working with JSON decoders, you can for example read a file with `Embed.File.read`, and parse it with `Embed.andThen`. If the parsing succeeds you can embed the value with `Embed.succeed`, and if it fails you can report why with `Embed.fail`. If all the embedders succeed then the resulting values will be generated and placed as Elm code inside `src/generated` where they can be consumed by the rest of the codebase.
 
-<br>
+## Examples
 
-## Install
+### Environment variables
 
-✨ [Install](https://guide.elm-lang.org/install/elm.html) ✨
+When developing, you might want to use a local server instead of the production one. To achieve, this an environment variable can be embedded that contains the url of the server to use.
 
-For multiple versions, previous versions, and uninstallation, see the instructions [here](https://github.com/elm/compiler/blob/master/installers/README.md).
+`elm-embed-scripts/Server.elm`:
+```elm
+import Embed
+import Embed.Environment
 
-<br>
+server : Embed.Task String
+server =
+    Embed.Environment.string "server_url"
+```
 
-## Help
+Running `elm-embed run` when the environment variable `server_url` is set to `localhost:8080` will give you this inside `src/generated/Server.elm`:
+```elm
+server : String
+server =
+    "localhost:8080"
+```
 
-If you are stuck, ask around on [the Elm slack channel][slack]. Folks are friendly and happy to help with questions!
+### Markdown parsing
 
-[slack]: http://elmlang.herokuapp.com/
+You might want to make a page from a markdown document instead of Elm code. The normal approach would be to include the document as a string and then parse and render it at run-time. This has several problems. Parsing is time consuming. It is also annoying and error prone to embed markdown in an Elm string. Lastly you have to deal with the case where parsing fails and give the user some sort of error page. With `elm-embed` you can read a `.md` file and parse it at build-time, and if the parsing fail's you get the error as a developer at build-time instead of as a user at run-time.
+
+This example parses markdown document with [dillonkearns/elm-markdown](https://package.elm-lang.org/packages/dillonkearns/elm-markdown/latest/)
+
+```elm
+-- elm-embed-scripts/Markdown.elm
+import Embed
+import Embed.File
+import Markdown.Block exposing (Block(..))
+import Markdown.Parser
+
+document : Embed.Task Block
+document =
+    Embed.andThen
+        (\markdown ->
+            case Markdown.Parser.parse markdown of
+                Ok blocks ->
+                    Embed.succeed blocks
+
+                Err error ->
+                    Embed.fail "Parse error"
+        )
+    (File.read "blog/post1.md")
+```
+
+**Note:** If you're interested in this it might be worth checking out [elm-pages](https://elm-pages.com/) as well. It can do markdown parsing at build-time and a bunch of other cool stuff, batteries included. `elm-embed` is a tool for one specific thing while `elm-pages` is more of a frameworky kind of deal.
+
+## Installation
+
+## Usage
+
+Initialize with `elm-embed init`.
+
+Run embedders with `elm-embed run`.
+
+Get help with `elm-embed --help`.
+
+## License
