@@ -215,7 +215,7 @@ toBuilder root details artifacts =
 runGenerators :: FilePath -> B.Builder -> Task.Task x Generated
 runGenerators interpreter builder =
   do  result <- interpret interpreter builder
-      Task.io $ File.writeBuilder "debug.js" builder
+      --Task.io $ File.writeBuilder "debug.js" builder
       case JSON.decodeStrict' (TextEncoding.encodeUtf8 result) of
         Just generated -> return generated
         Nothing        -> error "nodejs emited bad json"
