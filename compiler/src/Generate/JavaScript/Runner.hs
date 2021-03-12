@@ -83,7 +83,7 @@ function performTask(task) {
 }
 
 function performCommand(command, args) {
-  if (command === "Environment.getVariable") {
+  if (command === "Embed.Environment.maybeString") {
     let [ name ] = args
     name = name.a
 

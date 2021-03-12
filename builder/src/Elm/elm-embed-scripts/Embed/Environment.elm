@@ -22,6 +22,6 @@ string name =
 
 maybeString : String -> Embed.Task (Maybe String)
 maybeString name =
-    Embed.Internal.Task "Environment.getVariable"
+    Embed.Internal.Task "Embed.Environment.maybeString"
         [ Encode.string name ]
         (Decode.map Embed.succeed (Decode.nullable Decode.string))
