@@ -1,11 +1,26 @@
 module Embed.File exposing (read)
 
+{-|
+
+@docs read
+
+-}
+
 import Embed
 import Embed.Internal
 import Json.Decode as Decode
 import Json.Encode as Encode
 
 
+{-| Read the contents of a file on disk.
+
+The path is read relative to the directory where elm.json is located.
+
+    read "myMarkdown.md"
+
+    read "/home/user/myElmProject/myMarkdown.md"
+
+-}
 read : String -> Embed.Task String
 read path =
     Embed.andThen

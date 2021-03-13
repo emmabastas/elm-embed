@@ -23,7 +23,7 @@ import Control.Exception (assert)
 
 
 modules :: Map.Map FilePath BS.ByteString
-modules = Map.fromList $ $(embedDir "builder/src/Elm/elm-embed-scripts")
+modules = Map.fromList $ $(embedDir "builder/src/Elm/elm-dist/src")
 
 writeModules :: FilePath -> IO ()
 writeModules root =
