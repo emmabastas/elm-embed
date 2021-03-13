@@ -16,6 +16,8 @@ import qualified Type.Occurs as Occurs
 import Type.Type as Type
 import qualified Type.UnionFind as UF
 
+import qualified Reporting.Annotation as A
+
 
 
 -- UNIFY
@@ -197,8 +199,8 @@ actuallyUnify context@(Context _ (Descriptor firstContent _ _ _) _ (Descriptor s
     RigidSuper super _ ->
         unifyRigid context (Just super) firstContent secondContent
 
-    Alias home name args realVar ->
-        unifyAlias context home name args realVar secondContent
+    Alias region home name args realVar ->
+        unifyAlias region context home name args realVar secondContent
 
     Structure flatType ->
         unifyStructure context flatType firstContent secondContent
@@ -237,7 +239,7 @@ unifyFlex context content otherContent =
     RigidSuper _ _ ->
         merge context otherContent
 
-    Alias _ _ _ _ ->
+    Alias _ _ _ _ _ ->
         merge context otherContent
 
     Structure _ ->
@@ -271,7 +273,7 @@ unifyRigid context maybeSuper content otherContent =
     RigidSuper _ _ ->
         mismatch
 
-    Alias _ _ _ _ ->
+    Alias _ _ _ _ _ ->
         mismatch
 
     Structure _ ->
@@ -333,7 +335,7 @@ unifyFlexSuper context super content otherContent =
             CompAppend -> merge context content
             Number     -> mismatch
 
-    Alias _ _ _ realVar ->
+    Alias _ _ _ _ realVar ->
         subUnify (_first context) realVar
 
     Error ->
@@ -446,11 +448,11 @@ unifyComparableRecursive var =
 -- UNIFY ALIASES
 
 
-unifyAlias :: Context -> ModuleName.Canonical -> Name.Name -> [(Name.Name, Variable)] -> Variable -> Content -> Unify ()
-unifyAlias context home name args realVar otherContent =
+unifyAlias :: Maybe A.Region -> Context -> ModuleName.Canonical -> Name.Name -> [(Name.Name, Variable)] -> Variable -> Content -> Unify ()
+unifyAlias region context home name args realVar otherContent =
   case otherContent of
     FlexVar _ ->
-      merge context (Alias home name args realVar)
+      merge context (Alias region home name args realVar)
 
     FlexSuper _ _ ->
       subUnify realVar (_second context)
@@ -461,7 +463,7 @@ unifyAlias context home name args realVar otherContent =
     RigidSuper _ _ ->
       subUnify realVar (_second context)
 
-    Alias otherHome otherName otherArgs otherRealVar ->
+    Alias _ otherHome otherName otherArgs otherRealVar ->
       if name == otherName && home == otherHome then
         Unify $ \vars ok err ->
           let
@@ -525,7 +527,7 @@ unifyStructure context flatType content otherContent =
     RigidSuper _ _ ->
         mismatch
 
-    Alias _ _ _ realVar ->
+    Alias _ _ _ _ realVar ->
         subUnify (_first context) realVar
 
     Structure otherFlatType ->
@@ -686,7 +688,7 @@ gatherFields fields variable =
         Structure (Record1 subFields subExt) ->
             gatherFields (Map.union fields subFields) subExt
 
-        Alias _ _ _ var ->
+        Alias _ _ _ _ var ->
             -- TODO may be dropping useful alias info here
             gatherFields fields var
 

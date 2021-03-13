@@ -73,7 +73,7 @@ occursHelp seen var foundCycle =
                           occursHelp newSeen b =<<
                             occursHelp newSeen c foundCycle
 
-          Alias _ _ args _ ->
+          Alias _ _ _ args _ ->
               foldrM (occursHelp (var:seen)) foundCycle (map snd args)
 
           Error ->

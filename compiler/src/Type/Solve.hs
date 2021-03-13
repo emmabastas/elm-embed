@@ -398,7 +398,7 @@ adjustRankContent youngMark visitMark groupRank content =
                     Just c ->
                       max (max ma mb) <$> go c
 
-      Alias _ _ args _ ->
+      Alias _ _ _ args _ ->
           -- THEORY: anything in the realVar would be outermostRank
           foldM (\rank (_, argVar) -> max rank <$> go argVar) outermostRank args
 
@@ -450,10 +450,10 @@ typeToVar rank pools aliasDict tipe =
           bVar <- go b
           register rank pools (Structure (Fun1 aVar bVar))
 
-    AliasN _ home name args aliasType ->
+    AliasN region home name args aliasType ->
       do  argVars <- traverse (traverse go) args
           aliasVar <- typeToVar rank pools (Map.fromList argVars) aliasType
-          register rank pools (Alias home name argVars aliasVar)
+          register rank pools (Alias region home name argVars aliasVar)
 
     PlaceHolder name ->
       return (aliasDict ! name)
@@ -560,7 +560,7 @@ srcTypeToVar rank pools flexVars srcType =
               Can.Filled tipe ->
                 go tipe
 
-          register rank pools (Alias home name argVars aliasVar)
+          register rank pools (Alias region home name argVars aliasVar)
 
 
 srcFieldTypeToVar :: Int -> Pools -> Map.Map Name.Name Variable -> Can.FieldType -> IO Variable
@@ -626,10 +626,10 @@ makeCopyHelp maxRank pools variable =
                     do  UF.set copy $ makeDescriptor $ FlexSuper super (Just name)
                         return copy
 
-                  Alias home name args realType ->
+                  Alias region home name args realType ->
                     do  newArgs <- mapM (traverse (makeCopyHelp maxRank pools)) args
                         newRealType <- makeCopyHelp maxRank pools realType
-                        UF.set copy $ makeDescriptor (Alias home name newArgs newRealType)
+                        UF.set copy $ makeDescriptor (Alias region home name newArgs newRealType)
                         return copy
 
                   Error ->
@@ -693,7 +693,7 @@ restoreContent content =
                 Nothing -> return ()
                 Just c  -> restore c
 
-    Alias _ _ args var ->
+    Alias _ _ _ args var ->
       do  mapM_ (traverse restore) args
           restore var
 

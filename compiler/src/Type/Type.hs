@@ -119,7 +119,7 @@ data Content
     | RigidVar Name.Name
     | RigidSuper SuperType Name.Name
     | Structure FlatType
-    | Alias ModuleName.Canonical Name.Name [(Name.Name,Variable)] Variable
+    | Alias (Maybe A.Region) ModuleName.Canonical Name.Name [(Name.Name,Variable)] Variable
     | Error
 
 
@@ -375,10 +375,10 @@ variableToCanType variable =
         RigidSuper _ name ->
             return (Can.TVar name)
 
-        Alias home name args realVariable ->
+        Alias region home name args realVariable ->
             do  canArgs <- traverse (traverse variableToCanType) args
                 canType <- variableToCanType realVariable
-                return (Can.TAlias Nothing home name canArgs (Can.Filled canType))
+                return (Can.TAlias region home name canArgs (Can.Filled canType))
 
         Error ->
             error "cannot handle Error types in variableToCanType"
@@ -485,7 +485,7 @@ contentToErrorType variable content =
     RigidSuper super name ->
         return (ET.RigidSuper (superToSuper super) name)
 
-    Alias home name args realVariable ->
+    Alias _ home name args realVariable ->
         do  errArgs <- traverse (traverse variableToErrorType) args
             errType <- variableToErrorType realVariable
             return (ET.Alias home name errArgs errType)
@@ -674,7 +674,7 @@ getVarNames var takenNames =
               RigidSuper super name ->
                 addName 0 name var (RigidSuper super) takenNames
 
-              Alias _ _ args _ ->
+              Alias _ _ _ args _ ->
                 foldrM getVarNames takenNames (map snd args)
 
               Structure flatType ->
