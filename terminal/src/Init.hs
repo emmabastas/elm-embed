@@ -48,11 +48,11 @@ run () () =
 question :: D.Doc
 question =
   D.stack
-    [ D.reflow "This is what I will do to initialize elm-generate:"
+    [ D.reflow "This is what I will do to initialize elm-embed:"
     , D.indent 4 $ D.stack
       [ D.reflow
         "* Create a folder named `elm-embed-scripts` and place some Elm modules in there.\
-        \ This is the place where you will write you generators later on."
+        \ This is the place where you will write you embedders later on."
       , D.reflow
         "* Add `elm-embed-scripts` to your `source-directories` in `elm.json`."
 
