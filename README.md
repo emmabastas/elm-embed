@@ -31,7 +31,7 @@ server =
 
 ### Markdown parsing
 
-You might want to make a page from a markdown document instead of Elm code. The normal approach would be to include the document as a string and then parse and render it at run-time. This has several problems. Parsing is time consuming. It is also annoying and error prone to embed markdown in an Elm string. Lastly you have to deal with the case where parsing fails and give the user some sort of error page. With `elm-embed` you can read a `.md` file and parse it at build-time, and if the parsing fail's you get the error as a developer at build-time instead of as a user at run-time.
+You might want to make a page from a markdown document instead of Elm code. The normal approach would be to include the document as a string and then parse and render it at run-time. This has several drawbacks. Parsing takes time. It is also annoying and error prone to embed markdown in an Elm string by hand. Lastly you have to deal with the case where parsing fails and give the user some sort of error page. With `elm-embed` you can read a `.md` file, parse it at build-time, and if the parsing fail's you get the error as a developer at build-time instead of as a user at run-time.
 
 This example parses markdown document with [dillonkearns/elm-markdown](https://package.elm-lang.org/packages/dillonkearns/elm-markdown/latest/)
 
