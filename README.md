@@ -58,6 +58,10 @@ document =
 
 **Note:** If you're interested in this it might be worth checking out [elm-pages](https://elm-pages.com/) as well. It can do markdown parsing at build-time and a bunch of other cool stuff, batteries included. `elm-embed` is a tool for one specific thing while `elm-pages` is more of a frameworky kind of deal.
 
+### API doccumentation
+
+`elm-embed` places some modules of it's own in `elm-embed-scripts` to be used by your embedders. You can see the full API for those modules <a href="https://elm-doc-preview.netlify.app/Embed?repo=emmabastas%2Felm-embed-docs&version=master" target="_blank">Here.</a>
+
 ## Installation
 
 ## Usage
