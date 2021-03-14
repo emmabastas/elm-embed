@@ -71,5 +71,3 @@ Initialize with `elm-embed init`.
 Run embedders with `elm-embed run`.
 
 Get help with `elm-embed --help`.
-
-## License
