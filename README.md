@@ -1,4 +1,4 @@
-# `elm-embed`
+# elm-embed
 
 Read, parse and embed environment variables and file content into your Elm code.
 
@@ -31,9 +31,9 @@ server =
 
 ### Markdown parsing
 
-You might want to make a page from a markdown document instead of Elm code. The normal approach would be to include the document as a string and then parse and render it at run-time. This has several drawbacks. Parsing takes time. It is also annoying and error prone to embed markdown in an Elm string by hand. Lastly you have to deal with the case where parsing fails and give the user some sort of error page. With `elm-embed` you can read a `.md` file, parse it at build-time, and if the parsing fail's you get the error as a developer at build-time instead of as a user at run-time.
+You might want to make a page from a markdown document instead of Elm code. The normal approach would be to include the document as a string and then parse and render it at run-time. This has several drawbacks. Parsing takes time. It's also annoying and error prone to embed markdown in an Elm string by hand. Lastly you have to deal with the case where parsing fails and give the user some sort of error page. With `elm-embed` you can read a `.md` file, parse it at build-time, and if the parsing fail's you get the error as a developer at build-time instead of as a user at run-time.
 
-This example parses markdown document with [dillonkearns/elm-markdown](https://package.elm-lang.org/packages/dillonkearns/elm-markdown/latest/)
+This example parses a markdown document with [dillonkearns/elm-markdown](https://package.elm-lang.org/packages/dillonkearns/elm-markdown/latest/)
 
 ```elm
 -- elm-embed-scripts/Markdown.elm
@@ -53,17 +53,16 @@ document =
                 Err error ->
                     Embed.fail "Parse error"
         )
-    (File.read "blog/post1.md")
+    (Embed.File.read "blog/post1.md")
 ```
 
 **Note:** If you're interested in this it might be worth checking out [elm-pages](https://elm-pages.com/) as well. It can do markdown parsing at build-time and a bunch of other cool stuff, batteries included. `elm-embed` is a tool for one specific thing while `elm-pages` is more of a frameworky kind of deal.
 
-### API doccumentation
+### API documentation
 
-`elm-embed` places some modules of it's own in `elm-embed-scripts` to be used by your embedders. You can see the full API for those modules <a href="https://elm-doc-preview.netlify.app/Embed?repo=emmabastas%2Felm-embed-docs&version=master" target="_blank">Here.</a>
+`elm-embed` places some modules of it's own in `elm-embed-scripts` to be used by your embedders. You can see the full API for those modules <a href="https://elm-doc-preview.netlify.app/Embed?repo=emmabastas%2Felm-embed-docs&version=master" target="_blank">Here</a>.
 
 ## Installation
-
 
 ### Linux
 
@@ -83,7 +82,7 @@ Uninstall with `sudo rm /usr/local/bin/elm-embed`
 
 ### Windows or Mac
 
-There are currently no prebuilt binaries for Windows or Mac. The only option right now is to build from source, it's the same process as when building the Elm compiler.
+There are currently no prebuilt binaries for Windows or Mac, the only option is to build from source, it's the same process as when building the Elm compiler.
 
 If you send me a message in the Elm slack (@emmabastas) that would really motivate me to fix this :)
 
