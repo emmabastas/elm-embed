@@ -58,7 +58,7 @@ init =
     example =
       reflow
         "Creates an `elm-embed-scripts` folder with modules consumed by your\
-        \ generators, also adds this folder to `source-directories` in `elm.json`."
+        \ embedders, also adds this folder to `source-directories` in `elm.json`."
   in
   Terminal.Command "init" (Common summary) details example noArgs noFlags Init.run
 
@@ -71,10 +71,10 @@ make :: Terminal.Command
 make =
   let
     summary =
-      "Generate Elm code from the generators in `elm-embed-scripts`"
+      "Run the embedders in `elm-embed-scripts` and embed the resulting values"
 
     details =
-      "Generate Elm code from the generators in `elm-embed-scripts`"
+      "Run the embedders in `elm-embed-scripts` and embed the resulting values"
 
     example =
       stack []
