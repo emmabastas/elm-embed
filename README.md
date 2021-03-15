@@ -64,6 +64,29 @@ document =
 
 ## Installation
 
+
+### Linux
+
+Running the code bellow will download a prepuilt binary for 64-bit linux, make it executable and place it in `/usr/local/bin`.
+This works for most Linux distributions.
+
+```bash
+curl -L -o elm-embed.gz https://github.com/emmabastas/elm-embed/releases/download/0.1.0/elm-embed-0.1.0-linux-x64.gz
+gunzip elm-embed.gz
+chmod +x elm-embed
+sudo mv elm-embed /usr/local/bin/
+```
+
+Now `elm-embed` should be callable from the command-line.
+
+Uninstall with `sudo rm /usr/local/bin/elm-embed`
+
+### Windows or Mac
+
+There are currently no prebuilt binaries for Windows or Mac. The only option right now is to build from source, it's the same process as when building the Elm compiler.
+
+If you send me a message in the Elm slack (@emmabastas) that would really motivate me to fix this :)
+
 ## Usage
 
 Initialize with `elm-embed init`.
