@@ -97,3 +97,11 @@ Initialize with `elm-embed init`.
 Run embedders with `elm-embed run`.
 
 Get help with `elm-embed --help`.
+
+## Contributing & Setting expectations
+
+The best way to contribute right now is to provide me with use cases by leaving a comment [here](https://github.com/emmabastas/elm-embed/issues/7).
+Be as detailed as possible. What could `elm-embed` do for you and how? What would need to be changed/added?
+
+These use cases will really help me make more informed design descissions in the future, but I cannot promise that your specific use case will be implemented.
+I want `elm-embed` to be the best it can within it's scope, and that means rejecting things that fall outside the scope, and also taking the time to think things through, instead of rushing features. 
