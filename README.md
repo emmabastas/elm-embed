@@ -1,3 +1,6 @@
+> # 🚨 This tool is in early development 🚨
+> Breaking changes and bugs are to be expected
+
 # elm-embed
 
 Read, parse and embed environment variables and file content into your Elm code.
