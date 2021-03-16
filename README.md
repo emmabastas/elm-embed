@@ -42,10 +42,10 @@ This example parses a markdown document with [dillonkearns/elm-markdown](https:/
 -- elm-embed-scripts/Markdown.elm
 import Embed
 import Embed.File
-import Markdown.Block exposing (Block(..))
+import Markdown.Block exposing (Block(..), HeadingLevel(..), Inline(..))
 import Markdown.Parser
 
-document : Embed.Task Block
+document : Embed.Task (List Block)
 document =
     Embed.andThen
         (\markdown ->
@@ -53,10 +53,11 @@ document =
                 Ok blocks ->
                     Embed.succeed blocks
 
-                Err error ->
+                Err _ ->
                     Embed.fail "Parse error"
         )
-    (Embed.File.read "blog/post1.md")
+        (Embed.File.read "markdown.md")
+
 ```
 
 **Note:** If you're interested in this it might be worth checking out [elm-pages](https://elm-pages.com/) as well. It can do markdown parsing at build-time and a bunch of other cool stuff, batteries included. `elm-embed` is a tool for one specific thing while `elm-pages` is more of a frameworky kind of deal.
