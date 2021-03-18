@@ -88,8 +88,6 @@ Uninstall with `sudo rm /usr/local/bin/elm-embed`
 
 There are currently no prebuilt binaries for Windows or Mac, the only option is to build from source, it's the same process as when building the Elm compiler.
 
-If you send me a message in the Elm slack (@emmabastas) that would really motivate me to fix this :)
-
 ## Usage
 
 Initialize with `elm-embed init`.
