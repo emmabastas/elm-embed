@@ -25,7 +25,7 @@ server =
     Embed.Environment.string "server_url"
 ```
 
-Running `elm-embed run` when the environment variable `server_url` is set to `localhost:8080` will give you this inside `src/generated/Server.elm`:
+Running `elm-embed run` when the environment variable `server_url` is set to `localhost:8080` will give you this inside `src/Generated/Server.elm`:
 ```elm
 server : String
 server =
