@@ -1,0 +1,15 @@
+Run the embedders in `elm-embed-scripts` and embed the resulting values
+
+    elm-embed run
+
+
+
+Flags:
+
+    --interpreter=<interpreter>
+        Path to a alternate JS interpreter, like node or nodejs.
+    
+    --report=<report-type>
+        You can say --report=json to get error messages as JSON. This is only
+        really useful if you are an editor plugin. Humans should avoid it!
+

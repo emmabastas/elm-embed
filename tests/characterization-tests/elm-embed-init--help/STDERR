@@ -1,0 +1,7 @@
+Initialize elm-embed for this project
+
+    elm-embed init
+
+Creates an `elm-embed-scripts` folder with modules consumed by your embedders,
+also adds this folder to `source-directories` in `elm.json`.
+

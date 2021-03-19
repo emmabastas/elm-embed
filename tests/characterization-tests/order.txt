@@ -1,0 +1,11 @@
+elm-embed
+elm-embed--version
+elm-embed--help
+elm-embed-init--help
+elm-embed-run--help
+elm-embed-BAD-COMMAND
+elm-embed-BAD-FLAG
+#elm-embed-init-NO-ELM-JSON
+#elm-embed-init
+
+basic-embedders

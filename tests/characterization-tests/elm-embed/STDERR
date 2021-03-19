@@ -1,0 +1,12 @@
+elm-embed 0.1.0
+
+Commands:
+
+    elm-embed init
+        Initialize elm-embed for this project
+    
+    elm-embed run
+        Run the embedders in `elm-embed-scripts` and embed the resulting values
+
+To get a more detailed description of each command, add the --help flag.
+

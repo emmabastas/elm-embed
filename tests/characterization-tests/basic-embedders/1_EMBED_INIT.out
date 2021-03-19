@@ -1,0 +1,10 @@
+This is what I will do to initialize elm-embed:
+
+    * Create a folder named `elm-embed-scripts` and place some Elm modules in
+    there. This is the place where you will write you embedders later on.
+    
+    * Add `elm-embed-scripts` to your `source-directories` in `elm.json`.
+    
+    * Add elm/json to your direct dependencies.
+
+Ok? [Y/n]: All done!

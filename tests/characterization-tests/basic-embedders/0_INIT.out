@@ -1,0 +1,9 @@
+Hello! Elm projects always start with an elm.json file. I can create them!
+
+Now you may be wondering, what will be in this file? How do I add Elm files to
+my project? How do I see it in the browser? How will my code grow? Do I need
+more directories? What about tests? Etc.
+
+Check out <https://elm-lang.org/0.19.1/init> for all the answers!
+
+Knowing all that, would you like me to create an elm.json file now? [Y/n]: Okay, I created it. Now read that link!
