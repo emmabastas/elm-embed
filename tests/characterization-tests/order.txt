@@ -8,4 +8,10 @@ elm-embed-BAD-FLAG
 #elm-embed-init-NO-ELM-JSON
 #elm-embed-init
 
+# This test doesn't do anything. It just makes sure that all the dependencies
+# are downloaded by elm-embed. If this is not done then if another test
+# downloads a dependency it will cause the output to be different, and the
+# testing script will report it as an error.
+dummy-test-download-dependencies
+
 basic-embedders
