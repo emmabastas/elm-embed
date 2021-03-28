@@ -5,34 +5,55 @@ import os
 from os.path import abspath, join
 import shutil
 import subprocess
+from subprocess import PIPE
 import importlib
 import tempfile
 import filecmp
+import argparse
 
 def main():
 
-    print()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--elm-embed-path",
+            dest="elmEmbedPath",
+            default="elm-embed"
+        )
+    parser.add_argument("--nodejs-path",
+            dest="nodejsPath",
+            default="node"
+        )
 
-    elmEmbedPath = None
-    if len(sys.argv) == 1:
-        elmEmbedPath = "elm-embed"
-    elif len(sys.argv) == 2:
-        elmEmbedPath = sys.argv[1]
-    else:
-        print("USAGE: characterization-test.py [path to elm-embed]")
-        exit(0)
+    args = parser.parse_args()
 
+    versionInfo = []
     try:
-        p = subprocess.Popen([elmEmbedPath, "--version"], stdout=subprocess.PIPE)
+        p = subprocess.Popen([args.elmEmbedPath, "--version"], stdout=PIPE)
         out, _ = p.communicate()
-        print("elm-embed: " + out.decode("utf-8"), end="")
+        versionInfo.append( ("elm-embed", args.elmEmbedPath, out) )
     except FileNotFoundError:
-        print("Could not find the elm-embed binary in PATH.")
+        print("Could not find the elm-embed binary in your PATH.")
         print("Specify the location of elm-embed like this:")
         print("    characterization-test.py /path/to/elm-embed")
         exit(0)
 
+    try:
+        p = subprocess.Popen([args.nodejsPath, "--version"], stdout=PIPE)
+        out, _ = p.communicate()
+        versionInfo.append( ("nodejs", args.nodejsPath, out) )
+    except FileNotFoundError:
+        print("Could not find the nodejs binary in PATH.")
+        print("Specify the location of nodejs like this:")
+        print("    characterization-test.py /path/to/nodejs")
+        exit(0)
+
     print()
+    for name, path, version in versionInfo:
+        print(name)
+        print("    path: " + path)
+        print("    version: " + version.decode("utf-8"))
+
+    print()
+    print("Running tests...")
     error_count = 0
     for line in open("characterization-tests/order.txt", "r").readlines():
         if line == "" or line.isspace() or line.startswith("#"):
@@ -49,7 +70,7 @@ def main():
 
         wd = os.getcwd()
         outputDir = tempfile.mkdtemp(suffix="-"+n)
-        m.test(elmEmbedPath, outputDir)
+        m.test(args.elmEmbedPath, outputDir)
         os.chdir(wd)
 
         diff = filecmp.dircmp(snapshotDir, outputDir)
@@ -60,40 +81,44 @@ def main():
             shutil.rmtree(outputDir)
             continue
 
+        error_count += 1
+
         diffs = sorted(diffs, key=lambda t: t[1])
 
         print()
         print(bcolors.ERR + "ERR! " + bcolors.ENDC + n)
         print("The output and snapshot doesn't match.")
         print()
-        print("Keys:")
-        print(bcolors.RED + "    -" + bcolors.ENDC + " = "
-                + "file/dir pressent in snapshot but not in output")
-        print(bcolors.GREEN + "    +" + bcolors.ENDC + " = "
-                + "file/dir pressent in output but not in snapshot")
-        print(bcolors.CYAN + "    m" + bcolors.ENDC + " = file content missmatch")
-
-        print()
         print("Diff:")
         for [ t, p ] in diffs:
             if t == "removed":
-                print(bcolors.RED + "- " + bcolors.ENDC, end="")
+                print(bcolors.RED + "    - " + bcolors.ENDC, end="")
             elif t == "added":
-                print(bcolors.GREEN + "+ " + bcolors.ENDC, end="")
+                print(bcolors.GREEN + "    + " + bcolors.ENDC, end="")
             else:
-                print(bcolors.CYAN + "m " + bcolors.ENDC, end="")
+                print(bcolors.CYAN + "    m " + bcolors.ENDC, end="")
             print(p)
 
         print()
         print("Output dir: " + outputDir)
-        print("Snapshot dir: " + abspath(snapshotDir))
 
         print()
         print("To make current output be the snapshot, run:")
         print("     rm -r " + abspath(snapshotDir)
                 + " && mv " + outputDir + " " + abspath(snapshotDir))
+        print()
 
+    if error_count == 0:
+        print ("Done. 0 errors")
+        exit(0)
 
+    print()
+    print("Keys:")
+    print(bcolors.RED + "    -" + bcolors.ENDC + " = "
+            + "file/dir pressent in snapshot but not in output")
+    print(bcolors.GREEN + "    +" + bcolors.ENDC + " = "
+            + "file/dir pressent in output but not in snapshot")
+    print(bcolors.CYAN + "    m" + bcolors.ENDC + " = file content missmatch")
     print()
     print("Done. " + str(error_count) + " error(s)")
 
