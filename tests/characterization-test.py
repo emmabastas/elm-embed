@@ -30,6 +30,7 @@ def main():
         print("Could not find the elm-embed binary in PATH.")
         print("Specify the location of elm-embed like this:")
         print("    characterization-test.py /path/to/elm-embed")
+        exit(0)
 
     print()
     error_count = 0
